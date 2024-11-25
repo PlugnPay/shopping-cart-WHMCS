@@ -3,6 +3,9 @@
 Easy to install payment modules for the WHMCS shopping cart.
 Multiple payment styles are supported, each covering a different checkout need.
 
+* Smart Screens v2 (Gateway Hosted Solution)
+  - [Download](./whmcd_ss2_module.zip)
+
 * Smart Screens v1 (Legacy Gateway Hosted Solution)
   - [Download](./whmcd_ss1_module.zip)
   
@@ -14,6 +17,15 @@ For complete instructions on how to install/setup any of our payment modules, pl
 
 Here is a break down of what each payment module offers/does:
 
+Smart Screens v2
+* This is a version of our Smart Screens payment method, for PnP accounts.
+* Supports Credit Card &/or ACH/eCheck payment options configured with us.
+* WHMCS will NOT collect any sensitive payment info from the customer at checkout.
+* Customer will be redirected to our gateway's secure billing pages to complete their payment.
+* Our payment gateway will directly collect the payment data via our secure billing pages.
+* After the payment info is submitted & approved, we'll redirect the customer back to WHMCS.
+* This module does NOT require the given site to be SSL secured, but its still HIGHLY recommended.
+
 Smart Screens v1 (Legacy)
 * This is a legacy version of our Smart Screens payment method, for older/custom PnP accounts.
 * Supports Credit Card &/or ACH/eCheck payment options configured with us.
@@ -24,6 +36,10 @@ Smart Screens v1 (Legacy)
 * This module does NOT require the given site to be SSL secured, but its still HIGHLY recommended.
 
 ## History
+
+Smart Screens v2
+* Gateway Hosted Solution
+* Generic version for all PlugnPay clients with basic payment needs
 
 Smart Screens v1
 * Legacy Gateway Hosted Solution
