@@ -1,0 +1,8 @@
+v1.0.0 - 2026-08-26
+- Initial release for WHMCS 9.0.x (target 9.0.7)
+- Smart Screens v2 hosted checkout (https://pay1.plugnpay.com/pay/)
+- Authorization-only (pb_post_auth=no); capture / void / refund in PlugnPay Admin
+- Return validation: pi_response_status, amount, gateway account, invoice id
+- Third-party gateway overlay: modules/gateways/plugnpayss2.php + callback
+- Optional file debug logging with PAN / CVV / password redaction
+- PHP 8.2+ / WHMCS gateway API 1.1

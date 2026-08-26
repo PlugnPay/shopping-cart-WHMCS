@@ -1,6 +1,8 @@
-# WHMCS 8.x — PlugnPay Payment Module
+# WHMCS 8.x — PlugnPay Payment Module (legacy)
 
-Package for **WHMCS 8.x** (third-party gateway API 1.1). Smart Screens v2 hosted checkout.
+Package for WHMCS **8.x** (third-party gateway API 1.1). Smart Screens v2 hosted checkout.
+
+This is the **legacy** sample-based beta. For WHMCS **9.0.x**, use [../WHMCS_v9.0.x/](../WHMCS_v9.0.x/).
 
 The module is an **untested beta**. It was converted from the WHMCS sample third-party gateway without a production WHMCS license. Test on a non-production system before going live.
 

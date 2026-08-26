@@ -4,3 +4,5 @@ _archive/
 
 .DS_Store
 Thumbs.db
+
+**/plugnpayss2/logs/*.log

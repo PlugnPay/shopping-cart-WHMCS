@@ -1,0 +1,67 @@
+====================================================
+PlugnPay Smart Screens v2 Module (Hosted Payments)
+Payment module for WHMCS v9.0.x — module v1.0.0
+Target: WHMCS 9.0.7
+====================================================
+
+***** IMPORTANT NOTES *****
+This module is provided "AS IS". Limited technical support assistance
+will be given to help diagnose/address problems with this module.
+
+Customers are redirected to PlugnPay hosted Smart Screens
+(https://pay1.plugnpay.com/pay/). WHMCS does not collect sensitive
+payment data. Storefront HTTPS is strongly recommended for the
+invoice return / callback.
+
+Transactions are AUTHORIZATION-ONLY (pb_post_auth=no). Capture, void,
+and refund are performed in PlugnPay Merchant Admin — not from WHMCS.
+On a successful authorization the callback records the invoice
+payment in WHMCS so services can provision.
+
+There is no public demo gateway account. Use merchant-supplied
+credentials from your PlugnPay account.
+***************************
+
+To Install:
+
+1. Download whmcs_9.0.7_ss2_module.zip from this folder
+   (or use the src/ss2/ tree in this repository).
+
+2. Unzip into the WHMCS root so these files merge in place:
+     modules/gateways/plugnpayss2.php
+     modules/gateways/callback/plugnpayss2.php
+     modules/gateways/plugnpayss2/PnPSs2Protocol.php
+     modules/gateways/plugnpayss2/PnPSs2Logger.php
+
+   From this repo's development tree that is:
+     WHMCS_v9.0.x/src/ss2/modules/gateways/ → <whmcs>/modules/gateways/
+
+3. In WHMCS: Configuration → System Settings → Payment Gateways
+   → All Payment Gateways → activate "PlugnPay Smart Screens v2".
+
+4. Enter Gateway Account (your PlugnPay username). Optionally enable
+   Debug Logging. Save Changes.
+
+5. Place a test invoice payment using your merchant account /
+   PlugnPay test procedures. Confirm the customer is redirected to
+   PlugnPay and returned to the invoice after approval or decline.
+
+Requirements:
+
+- WHMCS 9.0.x (target 9.0.7)
+- PHP 8.2 or 8.3
+- Overlay path: modules/gateways/
+- HTTPS recommended for the callback URL
+- PlugnPay gateway account username
+
+No Remote Client Password is required for Smart Screens v2.
+
+See the module README for full documentation, configuration
+reference, troubleshooting, and a manual test checklist:
+  src/ss2/README.md
+
+Also see the 9.0.x package overview:
+  WHMCS_v9.0.x/README.md
+
+Source tree (development):
+  src/ss2/
