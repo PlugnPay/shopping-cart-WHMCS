@@ -9,6 +9,8 @@ will be given to help diagnose/address problems with this module.
 
 This package is an UNTESTED BETA. It was written without a production
 WHMCS license. Test fully on a non-production system before going live.
+It does not include the WHMCS 9.0.x PCI input filtering and log-masking
+controls. Prefer WHMCS_v9.0.x when you are on WHMCS 9.
 
 Customers are redirected to PlugnPay hosted Smart Screens
 (https://pay1.plugnpay.com/pay/). WHMCS does not collect sensitive

@@ -37,6 +37,7 @@ For complete instructions, open the README inside the zip (or the linked docs ab
 2. Unzip into the WHMCS **root** so `modules/gateways/` merges in place.
 3. Configuration → System Settings → Payment Gateways → activate **PlugnPay Remote API**.
 4. Enter Gateway Account, Remote Client Password, and Authorization Type.
+   Client Area System URL must be `https://…`.
 
 - Quick install: [WHMCS_v9.0.x/INSTALL.txt](./WHMCS_v9.0.x/INSTALL.txt)
 
@@ -46,6 +47,7 @@ For complete instructions, open the README inside the zip (or the linked docs ab
 2. Unzip into the WHMCS **root** so `modules/gateways/` merges in place.
 3. Configuration → System Settings → Payment Gateways → activate **PlugnPay Smart Screens v2**.
 4. Enter the Gateway Account (PlugnPay username).
+   Client Area System URL must be `https://…`.
 
 - Quick install: [WHMCS_v9.0.x/INSTALL_SS2.txt](./WHMCS_v9.0.x/INSTALL_SS2.txt)
 
@@ -67,6 +69,7 @@ You may install both 9.0.x modules; enable only the payment method(s) you need.
 * WHMCS collects card data on the invoice (increases PCI scope).
 * Authorization is submitted to PlugnPay via cURL (`pnpremote.cgi`).
 * Client Area HTTPS and PHP cURL are required.
+* Inbound fields are filtered. Debug / Gateway logs mask PAN (last four) and redact CVV, track data, PIN, and passwords.
 * Authorization Type: `authonly` or `authpostauth`.
 * Capture / void / refund are done in PlugnPay Merchant Admin (not from WHMCS).
 * On successful capture the invoice is marked paid in WHMCS so services can provision.
@@ -80,6 +83,7 @@ You may install both 9.0.x modules; enable only the payment method(s) you need.
 * WHMCS does **not** collect sensitive payment data at checkout.
 * Customer is redirected to PlugnPay, then returned to the invoice after approval or decline.
 * HTTPS on your Client Area is required (return URL / callback).
+* Callback accepts POST only. Inbound fields are filtered. Logs mask PAN and redact CVV / secrets.
 * Transactions are authorization-only (`pb_post_auth=no`); capture / void / refund in PlugnPay Merchant Admin.
 * On successful authorization the invoice is marked paid in WHMCS so services can provision.
 * For WHMCS 9.0.x: payment module **v1.0.2**; target **9.0.7**.

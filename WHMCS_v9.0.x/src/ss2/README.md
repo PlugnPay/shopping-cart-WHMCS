@@ -125,11 +125,12 @@ Never logged: full card number (PAN is last-four only, including PAN found in fr
 
 | Symptom | What to check |
 |---|---|
-| Pay Now does nothing / empty form | Gateway Account is empty; re-save gateway settings |
+| Pay Now does nothing / empty form | Gateway Account is empty, or System URL is not `https://…` |
+| “Invalid request” | Callback was not a POST |
 | Client returns but invoice stays Unpaid | Decline (`pi_response_status` not `success`), amount mismatch, or gateway account mismatch — see Gateway Log |
 | “Amount Mismatch” in Gateway Log | Invoice total changed between Pay Now and return |
 | “Gateway Account Mismatch” | `pt_gateway_account` on return ≠ configured Gateway Account |
-| Duplicate transaction die | Same `pt_order_id` already recorded (`checkCbTransID`) |
+| Duplicate transaction | Same `pt_order_id` already recorded — callback redirects to the invoice |
 | Need to capture / void / refund | Use PlugnPay Merchant Admin (not this WHMCS module) |
 
 ## Manual test checklist
@@ -138,10 +139,12 @@ Use this list for a merchant regression pass on WHMCS **9.0.7**:
 
 - [ ] Gateway appears under Configuration → System Settings → Payment Gateways
 - [ ] Pay Now redirects to `https://pay1.plugnpay.com/pay/`
+- [ ] HTTP System URL refuses checkout (HTTPS required)
 - [ ] Approved payment marks the invoice Paid and logs Success
 - [ ] Declined card leaves the invoice Unpaid and logs Failure
 - [ ] Submit uses `pb_post_auth=no` (visible in debug log)
-- [ ] Debug log redacts PAN/CVV/password
+- [ ] Debug log / Gateway Log redacts PAN/CVV/password (PAN in free-text is last-four only)
+- [ ] Duplicate callback redirects to the invoice
 - [ ] Admin invoice screen has **no** working Refund for this gateway (use PlugnPay Admin)
 
 ## File map

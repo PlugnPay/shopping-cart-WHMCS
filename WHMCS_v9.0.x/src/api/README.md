@@ -132,6 +132,7 @@ Never logged: full card number (PAN is last-four only, including PAN found in fr
 |---|---|
 | “not configured” | Gateway Account and Remote Client Password are both required |
 | “HTTPS is required” | System URL must be `https://…` |
+| “valid card number and expiry are required” | Card number must be 13–19 digits; expiry must be a valid MMYY |
 | Declined | Gateway Log `MErrMsg` / `FinalStatus`; card, AVS, or account settings |
 | cURL / empty response | PHP cURL + OpenSSL; firewall to `pay1.plugnpay.com` |
 | Need to capture / void / refund | Use PlugnPay Merchant Admin (not this WHMCS module) |
@@ -143,10 +144,11 @@ Use this list for a merchant regression pass on WHMCS **9.0.7**:
 
 - [ ] Gateway appears under Configuration → System Settings → Payment Gateways
 - [ ] Invoice shows WHMCS card fields (not a redirect button only)
+- [ ] HTTP System URL refuses capture (HTTPS required)
 - [ ] Approved payment marks the invoice Paid
 - [ ] Declined card leaves the invoice Unpaid
 - [ ] `authonly` vs `authpostauth` matches the configured type in debug log
-- [ ] Debug log / Gateway Log redacts PAN/CVV/password
+- [ ] Debug log / Gateway Log redacts PAN/CVV/password (PAN in free-text is last-four only)
 - [ ] Admin invoice screen has **no** working Refund for this gateway (use PlugnPay Admin)
 
 ## File map

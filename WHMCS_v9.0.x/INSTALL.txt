@@ -55,16 +55,17 @@ To Install:
 5. Place a test invoice payment using your merchant account /
    PlugnPay test procedures. The Client Area must be served over HTTPS.
 
-Connectivity check (from the web server):
+Connectivity check (from the web server; do not put live card data in
+your shell history):
 
-  curl -d "publisher-name=YOUR_ACCOUNT&publisher-password=YOUR_REMOTE_PASSWORD&mode=auth&authtype=authonly&card-name=cardtest&card-number=4111111111111111&card-exp=01/30&card-cvv=123&card-amount=1.23" https://pay1.plugnpay.com/payment/pnpremote.cgi
+  curl -I https://pay1.plugnpay.com/payment/pnpremote.cgi
 
 Requirements:
 
 - WHMCS 9.0.x (target 9.0.7)
 - PHP 8.2 or 8.3 with cURL + OpenSSL
 - Overlay path: modules/gateways/
-- HTTPS System URL
+- HTTPS System URL (required)
 - PlugnPay gateway account username and Remote Client Password
 
 See the module README for full documentation, configuration

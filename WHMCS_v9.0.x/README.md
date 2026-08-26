@@ -16,8 +16,12 @@ Payment modules for WHMCS **9.0.x** (target **9.0.7**, gateway API 1.1). Current
 | Transaction mode | `authonly` or `authpostauth` | Authorization-only (`pb_post_auth=no`) |
 | Admin Refund / Cancel subscription | No (use PlugnPay Admin) | No (use PlugnPay Admin) |
 | Public demo account | No — merchant credentials only | No — merchant credentials only |
+| HTTPS System URL | Required | Required |
+| Input filtering / log masking | Yes (v1.0.2) | Yes (v1.0.2) |
 
 You may install both modules; enable only the method(s) you need.
+
+Inbound fields are filtered. Debug and WHMCS Gateway logs mask PAN (last four, including PAN in free-text) and redact CVV, track data, PIN, and passwords. Debug files are written under each module’s `logs/` directory with web access denied.
 
 ## Remote API (onsite)
 
@@ -45,7 +49,8 @@ WHMCS collects card data on the invoice and posts from the server to PlugnPay Re
    - `modules/gateways/plugnpayapi/`
 3. Configuration → System Settings → Payment Gateways → activate **PlugnPay Remote API**.
 4. Enter Gateway Account, Remote Client Password, and Authorization Type.
-5. Place a test invoice payment on a non-production system.
+5. Confirm Configuration → General Settings → System URL starts with `https://`.
+6. Place a test invoice payment on a non-production system.
 
 ## Smart Screens v2 (hosted)
 
@@ -74,7 +79,8 @@ Redirects customers to PlugnPay hosted Smart Screens. WHMCS does not collect car
    - `modules/gateways/plugnpayss2/`
 3. Configuration → System Settings → Payment Gateways → activate **PlugnPay Smart Screens v2**.
 4. Enter the Gateway Account (PlugnPay username).
-5. Place a test invoice payment on a non-production system.
+5. Confirm Configuration → General Settings → System URL starts with `https://`.
+6. Place a test invoice payment on a non-production system.
 
 ## Development layout
 
