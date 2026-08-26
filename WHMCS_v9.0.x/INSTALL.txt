@@ -1,0 +1,76 @@
+====================================================
+PlugnPay Remote API Module (Onsite Payments)
+Payment module for WHMCS v9.0.x — module v1.0.0
+Target: WHMCS 9.0.7
+====================================================
+
+***** IMPORTANT NOTES *****
+This module is provided "AS IS". Limited technical support assistance
+will be given to help diagnose/address problems with this module.
+
+This module collects card data in WHMCS and posts from the merchant
+server to PlugnPay Remote API
+(https://pay1.plugnpay.com/payment/pnpremote.cgi). This increases PCI
+DSS scope. For hosted (lower PCI) checkout, use Smart Screens v2.
+
+Client Area HTTPS is REQUIRED. PHP cURL with OpenSSL is required.
+
+Authorization Type:
+  authonly     — authorize only; settle in PlugnPay Admin
+  authpostauth — authorize and settle (sale)
+
+WHMCS still marks the invoice paid on a successful capture so
+services can provision.
+
+Capture, void, and refund are performed in PlugnPay Merchant Admin —
+not from WHMCS.
+
+There is no public demo gateway account and no Test/Production toggle.
+Use merchant-supplied credentials from your PlugnPay account.
+***************************
+
+To Install:
+
+1. Download whmcs_9.0.7_api_module.zip from this folder
+   (or use the src/api/ tree in this repository).
+
+2. Unzip into the WHMCS root so these files merge in place:
+     modules/gateways/plugnpayapi.php
+     modules/gateways/plugnpayapi/PnPApi.php
+     modules/gateways/plugnpayapi/PnPLogger.php
+
+   From this repo's development tree that is:
+     WHMCS_v9.0.x/src/api/modules/gateways/ → <whmcs>/modules/gateways/
+
+3. In WHMCS: Configuration → System Settings → Payment Gateways
+   → All Payment Gateways → activate "PlugnPay Remote API".
+
+4. Enter Gateway Account (publisher-name) and Remote Client Password
+   (publisher-password from PlugnPay Security Administration — not
+   your admin login password). Choose Authorization Type. Optionally
+   enable Debug Logging. Save Changes.
+
+5. Place a test invoice payment using your merchant account /
+   PlugnPay test procedures. The Client Area must be served over HTTPS.
+
+Connectivity check (from the web server):
+
+  curl -d "publisher-name=YOUR_ACCOUNT&publisher-password=YOUR_REMOTE_PASSWORD&mode=auth&authtype=authonly&card-name=cardtest&card-number=4111111111111111&card-exp=01/30&card-cvv=123&card-amount=1.23" https://pay1.plugnpay.com/payment/pnpremote.cgi
+
+Requirements:
+
+- WHMCS 9.0.x (target 9.0.7)
+- PHP 8.2 or 8.3 with cURL + OpenSSL
+- Overlay path: modules/gateways/
+- HTTPS System URL
+- PlugnPay gateway account username and Remote Client Password
+
+See the module README for full documentation, configuration
+reference, troubleshooting, and a manual test checklist:
+  src/api/README.md
+
+Also see the 9.0.x package overview:
+  WHMCS_v9.0.x/README.md
+
+Source tree (development):
+  src/api/

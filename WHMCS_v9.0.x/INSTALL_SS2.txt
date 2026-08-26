@@ -1,6 +1,6 @@
 ====================================================
 PlugnPay Smart Screens v2 Module (Hosted Payments)
-Payment module for WHMCS v9.0.x — module v1.0.0
+Payment module for WHMCS v9.0.x — module v1.0.1
 Target: WHMCS 9.0.7
 ====================================================
 

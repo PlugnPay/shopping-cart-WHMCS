@@ -80,6 +80,10 @@ function plugnpayss2_link($params)
         !empty($params['debugLog'])
     );
 
+    if ($accountId === '') {
+        return '<p>PlugnPay Smart Screens v2 is not configured. Please contact support.</p>';
+    }
+
     $fields = PnPSs2Protocol::buildHostedFields([
         'gateway_account' => $accountId,
         'amount' => $amount,

@@ -1,3 +1,9 @@
+v1.0.1 - 2026-08-26
+- Compare returned amount to WHMCS invoice balance (not only echoed custom fields)
+- Refuse Pay Now when Gateway Account is empty
+- Redirect duplicate callbacks to the invoice instead of dying
+- Add HTML "Return to invoice" fallback after the callback redirect
+
 v1.0.0 - 2026-08-26
 - Initial release for WHMCS 9.0.x (target 9.0.7)
 - Smart Screens v2 hosted checkout (https://pay1.plugnpay.com/pay/)

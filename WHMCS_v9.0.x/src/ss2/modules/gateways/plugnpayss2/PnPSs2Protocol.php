@@ -14,7 +14,7 @@ class PnPSs2Protocol
     public const CLIENT_IDENTIFIER = 'WHMCS_SS2';
     public const CUSTOM_INVOICE = 'whmcsinvoice';
     public const CUSTOM_AMOUNT = 'whmcsamount';
-    public const VERSION = '1.0.0';
+    public const VERSION = '1.0.1';
 
     /**
      * @param array<string, mixed> $response
@@ -122,6 +122,24 @@ class PnPSs2Protocol
     public static function invoiceViewUrl(string $systemUrl, $invoiceId): string
     {
         return rtrim($systemUrl, '/') . '/viewinvoice.php?id=' . rawurlencode((string)$invoiceId);
+    }
+
+    /**
+     * Remaining invoice balance from WHMCS ledger columns.
+     *
+     * @param mixed $total
+     * @param mixed $credit
+     * @param mixed $amountIn
+     * @param mixed $amountOut
+     */
+    public static function invoiceAmountDue($total, $credit = 0, $amountIn = 0, $amountOut = 0): string
+    {
+        $due = (float)$total - (float)$credit - (float)$amountIn + (float)$amountOut;
+        if ($due < 0) {
+            $due = 0.0;
+        }
+
+        return number_format($due, 2, '.', '');
     }
 
     /**

@@ -1,0 +1,7 @@
+v1.0.0 - 2026-08-26
+- Initial release for WHMCS 9.0.x (target 9.0.7)
+- Remote API onsite card capture via pnpremote.cgi
+- Authorization Type: authonly or authpostauth
+- Merchant gateway overlay: modules/gateways/plugnpayapi.php
+- Optional file debug logging with PAN / CVV / password redaction
+- PHP 8.2+ / WHMCS gateway API 1.1 / PHP cURL

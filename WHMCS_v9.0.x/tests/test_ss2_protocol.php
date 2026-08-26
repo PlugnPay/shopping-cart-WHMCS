@@ -49,7 +49,7 @@ assert_true($fields['pt_account_code_1'] === '42', 'account code 1 is invoice id
 assert_true($fields['pb_success_url'] === 'https://billing.example/modules/gateways/callback/plugnpayss2.php', 'success url');
 assert_true($fields['pt_payment_name'] === 'Jane Doe', 'payment name mapped');
 assert_true(PnPSs2Protocol::ENDPOINT === 'https://pay1.plugnpay.com/pay/', 'hosted endpoint');
-assert_true(PnPSs2Protocol::VERSION === '1.0.0', 'protocol version');
+assert_true(PnPSs2Protocol::VERSION === '1.0.1', 'protocol version');
 
 $success = [
     'pi_response_status' => 'success',
@@ -89,6 +89,11 @@ assert_true(
     'invoice view url'
 );
 
+assert_true(PnPSs2Protocol::invoiceAmountDue('100.00', '0', '0', '0') === '100.00', 'full invoice due');
+assert_true(PnPSs2Protocol::invoiceAmountDue('100.00', '10', '25', '0') === '65.00', 'due after credit and payment');
+assert_true(PnPSs2Protocol::invoiceAmountDue('100.00', '0', '40', '10') === '70.00', 'due after refunded payment');
+assert_true(PnPSs2Protocol::invoiceAmountDue('10.00', '0', '20', '0') === '0.00', 'due does not go negative');
+
 $logger = new PnPSs2Logger(sys_get_temp_dir(), false);
 $sanitized = $logger->sanitize([
     'pt_card_number' => '4111111111111111',
@@ -110,11 +115,15 @@ $callbackSrc = is_file($callback) ? (string)file_get_contents($callback) : '';
 assert_true($gatewaySrc !== '', 'gateway file is present');
 assert_true($callbackSrc !== '', 'callback file is present');
 assert_true(str_contains($gatewaySrc, 'function plugnpayss2_link'), 'gateway defines _link');
+assert_true(str_contains($gatewaySrc, 'not configured'), 'gateway refuses empty account');
 assert_true(str_contains($gatewaySrc, 'PnPSs2Protocol::buildHostedFields'), 'gateway uses protocol helper');
 assert_true(str_contains($gatewaySrc, 'htmlspecialchars'), 'gateway HTML-escapes form fields');
 assert_true(!str_contains($gatewaySrc, 'function plugnpayss2_refund'), 'gateway does not stub refund');
 assert_true(!str_contains($gatewaySrc, 'function plugnpayss2_cancelSubscription'), 'gateway does not stub cancel');
 assert_true(!preg_match('/\$username\b/', $gatewaySrc), 'gateway has no undefined $username');
+assert_true(str_contains($callbackSrc, 'plugnpayss2_invoiceAmountDue'), 'callback compares invoice balance');
+assert_true(str_contains($callbackSrc, 'Already Recorded'), 'callback redirects duplicate transactions');
+assert_true(str_contains($callbackSrc, 'Return to invoice'), 'callback has HTML return fallback');
 assert_true(str_contains($callbackSrc, 'PnPSs2Protocol::isSuccessfulResponse'), 'callback checks success status');
 assert_true(str_contains($callbackSrc, 'addInvoicePayment'), 'callback records invoice payment');
 assert_true(str_contains($callbackSrc, 'invoiceViewUrl'), 'callback redirects to invoice');

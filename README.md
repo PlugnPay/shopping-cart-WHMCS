@@ -1,12 +1,16 @@
 # Shopping Cart - WHMCS Payment Modules
 
 Easy to install payment modules for the [WHMCS](https://www.whmcs.com/) billing cart.
-**WHMCS 9.0** includes Smart Screens v2 hosted checkout. **WHMCS 8.x** keeps the earlier sample-based Smart Screens v2 beta.
+**WHMCS 9.0** includes Remote API (onsite) and Smart Screens v2 (hosted) checkout. **WHMCS 8.x** keeps the earlier sample-based Smart Screens v2 beta.
 
 ## Downloads by WHMCS version
 
 ### WHMCS v9.0.x (current — target 9.0.7)
 
+* **Remote API** — onsite card collection via `pnpremote.cgi`
+  - [Download](./WHMCS_v9.0.x/whmcs_9.0.7_api_module.zip)
+  - Source: [./WHMCS_v9.0.x/src/api/](./WHMCS_v9.0.x/src/api/)
+  - Docs: [package README](./WHMCS_v9.0.x/README.md) · [INSTALL.txt](./WHMCS_v9.0.x/INSTALL.txt) · [module README](./WHMCS_v9.0.x/src/api/README.md)
 * **Smart Screens v2** — gateway hosted checkout
   - [Download](./WHMCS_v9.0.x/whmcs_9.0.7_ss2_module.zip)
   - Source: [./WHMCS_v9.0.x/src/ss2/](./WHMCS_v9.0.x/src/ss2/)
@@ -27,6 +31,15 @@ Package overview: [./WHMCS_v8.x/README.md](./WHMCS_v8.x/README.md)
 
 For complete instructions, open the README inside the zip (or the linked docs above).
 
+### WHMCS 9.0.x — Remote API
+
+1. Download [whmcs_9.0.7_api_module.zip](./WHMCS_v9.0.x/whmcs_9.0.7_api_module.zip).
+2. Unzip into the WHMCS **root** so `modules/gateways/` merges in place.
+3. Configuration → System Settings → Payment Gateways → activate **PlugnPay Remote API**.
+4. Enter Gateway Account, Remote Client Password, and Authorization Type.
+
+- Quick install: [WHMCS_v9.0.x/INSTALL.txt](./WHMCS_v9.0.x/INSTALL.txt)
+
 ### WHMCS 9.0.x — Smart Screens v2
 
 1. Download [whmcs_9.0.7_ss2_module.zip](./WHMCS_v9.0.x/whmcs_9.0.7_ss2_module.zip).
@@ -45,7 +58,20 @@ For complete instructions, open the README inside the zip (or the linked docs ab
 
 - Quick install: [WHMCS_v8.x/INSTALL_SS2.txt](./WHMCS_v8.x/INSTALL_SS2.txt)
 
+You may install both 9.0.x modules; enable only the payment method(s) you need.
+
 ## Usage
+
+### Remote API (WHMCS 9.0.x)
+
+* WHMCS collects card data on the invoice (increases PCI scope).
+* Authorization is submitted to PlugnPay via cURL (`pnpremote.cgi`).
+* Client Area HTTPS and PHP cURL are required.
+* Authorization Type: `authonly` or `authpostauth`.
+* Capture / void / refund are done in PlugnPay Merchant Admin (not from WHMCS).
+* On successful capture the invoice is marked paid in WHMCS so services can provision.
+* For WHMCS 9.0.x: payment module **v1.0.0**; target **9.0.7**.
+* No public demo / test publisher — use merchant-supplied credentials.
 
 ### Smart Screens v2 (WHMCS 9.0.x)
 
@@ -56,7 +82,7 @@ For complete instructions, open the README inside the zip (or the linked docs ab
 * HTTPS on your Client Area is strongly recommended (return URL / callback).
 * Transactions are authorization-only (`pb_post_auth=no`); capture / void / refund in PlugnPay Merchant Admin.
 * On successful authorization the invoice is marked paid in WHMCS so services can provision.
-* For WHMCS 9.0.x: payment module **v1.0.0**; target **9.0.7**.
+* For WHMCS 9.0.x: payment module **v1.0.1**; target **9.0.7**.
 * No public demo / test publisher — use merchant-supplied credentials.
 
 ### Smart Screens v2 (WHMCS 8.x legacy)
@@ -69,10 +95,13 @@ For complete instructions, open the README inside the zip (or the linked docs ab
 shopping-cart-WHMCS/
   README.md
   .gitignore
-  WHMCS_v9.0.x/               # current (9.0.7) — Smart Screens v2
+  WHMCS_v9.0.x/               # current (9.0.7) — Remote API + Smart Screens v2
     README.md
+    INSTALL.txt
     INSTALL_SS2.txt
+    whmcs_9.0.7_api_module.zip
     whmcs_9.0.7_ss2_module.zip
+    src/api/
     src/ss2/
     tests/
   WHMCS_v8.x/                 # legacy (8.x) — Smart Screens v2 beta

@@ -1,6 +1,6 @@
 # PlugnPay Smart Screens v2 Module for WHMCS 9.0.x
 
-**Version:** 1.0.0  
+**Version:** 1.0.1  
 **Target:** WHMCS **9.0.7** (compatible with 9.0.x)  
 **Status:** Protocol tests included; validate on a non-production WHMCS 9.0.7 system before production
 
@@ -72,7 +72,7 @@ There is **no** Test/Production toggle and **no** public demo publisher.
 
 Accepted return POST must include `pi_response_status`. On `success`, the module also checks:
 
-- Returned `pt_transaction_amount` matches the amount sent at submit (`whmcsamount` custom field)
+- Returned `pt_transaction_amount` matches the WHMCS invoice balance (falls back to the `whmcsamount` custom field if the invoice cannot be loaded)
 - Returned `pt_gateway_account` matches the configured Gateway Account (when present)
 - Invoice id from `whmcsinvoice` custom field or `pt_account_code_1` is a valid WHMCS invoice
 

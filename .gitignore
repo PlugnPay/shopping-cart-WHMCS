@@ -6,3 +6,4 @@ _archive/
 Thumbs.db
 
 **/plugnpayss2/logs/*.log
+**/plugnpayapi/logs/*.log
