@@ -1,6 +1,6 @@
 # PlugnPay Smart Screens v2 Module for WHMCS 9.0.x
 
-**Version:** 1.0.1  
+**Version:** 1.0.2  
 **Target:** WHMCS **9.0.7** (compatible with 9.0.x)  
 **Status:** Protocol tests included; validate on a non-production WHMCS 9.0.7 system before production
 
@@ -13,21 +13,30 @@ This is a WHMCS third-party gateway (`modules/gateways/`). It does not collect c
 - Offsite / hosted checkout (card data collected on PlugnPay)
 - Authorization-only (`pb_post_auth=no`) — capture / settle in PlugnPay Admin
 - Return checks: `pi_response_status`, amount, gateway account, invoice id
-- Optional debug logging with PAN / CVV / password redaction
+- Input filtering on all hosted fields and callback values
+- Optional debug logging with PAN / CVV / password redaction (including PAN found in free-text)
 - PHP 8.2+ / WHMCS 9.0.x (gateway API 1.1)
 
 This module does **not** include WHMCS admin Refund or Cancel Subscription. Settle or reverse transactions in [PlugnPay Merchant Admin](https://pay1.plugnpay.com/admin/).
 
 ## PCI notice
 
-This module does **not** collect cardholder data on your server. Customers are redirected to PlugnPay’s hosted Smart Screens pages.
+This module does **not** collect cardholder data on your server. Customers are redirected to PlugnPay’s hosted Smart Screens pages (SAQ A style checkout). The module still:
+
+- Requires Client Area **HTTPS** so the return POST to the callback is encrypted
+- Accepts the callback over **POST** only
+- Filters inbound hosted fields and callback values (type, length, control characters)
+- Masks PAN (last four only) and redacts CVV, track data, PIN, and passwords if they appear in logs
+- Writes debug files under `logs/` with restrictive permissions (web access denied)
+
+Cryptographic response-link / hash verification is **not** included; amount, invoice, and gateway-account checks still apply.
 
 ## Requirements
 
 - WHMCS **9.0.x** (target **9.0.7**)
 - PHP **8.2** or **8.3** (WHMCS 9.0 system requirement)
 - PlugnPay **gateway account username** (merchant-supplied; there is no public demo account)
-- HTTPS on the Client Area is **strongly recommended** so the return POST to the callback stays secure
+- Client Area **HTTPS** (System URL must start with `https://`) — required for the return POST to the callback
 
 No Remote Client Password, cURL, or IP whitelist is required for this module.
 
@@ -110,7 +119,7 @@ Enable **Debug Logging** for sanitized files:
 modules/gateways/plugnpayss2/logs/plugnpay_ss2_YYYYMMDD.log
 ```
 
-Never logged: full card number, CVV, or publisher-password.
+Never logged: full card number (PAN is last-four only, including PAN found in free-text), CVV, track data, PIN, or publisher-password.
 
 ## Troubleshooting
 

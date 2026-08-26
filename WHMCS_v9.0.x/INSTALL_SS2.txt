@@ -1,6 +1,6 @@
 ====================================================
 PlugnPay Smart Screens v2 Module (Hosted Payments)
-Payment module for WHMCS v9.0.x — module v1.0.1
+Payment module for WHMCS v9.0.x — module v1.0.2
 Target: WHMCS 9.0.7
 ====================================================
 
@@ -10,8 +10,10 @@ will be given to help diagnose/address problems with this module.
 
 Customers are redirected to PlugnPay hosted Smart Screens
 (https://pay1.plugnpay.com/pay/). WHMCS does not collect sensitive
-payment data. Storefront HTTPS is strongly recommended for the
-invoice return / callback.
+payment data. Storefront HTTPS is REQUIRED for the
+invoice return / callback. The callback accepts POST only.
+Inbound fields are filtered. Debug / gateway logs mask PAN and
+redact CVV, track data, PIN, and passwords.
 
 Transactions are AUTHORIZATION-ONLY (pb_post_auth=no). Capture, void,
 and refund are performed in PlugnPay Merchant Admin — not from WHMCS.

@@ -49,7 +49,7 @@ assert_true($fields['pt_account_code_1'] === '42', 'account code 1 is invoice id
 assert_true($fields['pb_success_url'] === 'https://billing.example/modules/gateways/callback/plugnpayss2.php', 'success url');
 assert_true($fields['pt_payment_name'] === 'Jane Doe', 'payment name mapped');
 assert_true(PnPSs2Protocol::ENDPOINT === 'https://pay1.plugnpay.com/pay/', 'hosted endpoint');
-assert_true(PnPSs2Protocol::VERSION === '1.0.1', 'protocol version');
+assert_true(PnPSs2Protocol::VERSION === '1.0.2', 'protocol version');
 
 $success = [
     'pi_response_status' => 'success',
@@ -94,17 +94,34 @@ assert_true(PnPSs2Protocol::invoiceAmountDue('100.00', '10', '25', '0') === '65.
 assert_true(PnPSs2Protocol::invoiceAmountDue('100.00', '0', '40', '10') === '70.00', 'due after refunded payment');
 assert_true(PnPSs2Protocol::invoiceAmountDue('10.00', '0', '20', '0') === '0.00', 'due does not go negative');
 
+assert_true(PnPSs2Protocol::filterInvoiceId('42<script>') === '42', 'invoice id digits only');
+assert_true(PnPSs2Protocol::filterString("Jane\0Doe\n") === 'JaneDoe', 'control characters stripped');
+assert_true(PnPSs2Protocol::filterEmail('not-an-email') === '', 'invalid email dropped');
+assert_true(PnPSs2Protocol::filterIp('not-an-ip') === '', 'invalid IP dropped');
+assert_true(PnPSs2Protocol::filterAmount('-5') === '0.00', 'negative amount becomes zero');
+assert_true(PnPSs2Protocol::filterHttpsUrl('http://example.com') === '', 'HTTP URL rejected');
+assert_true(
+    PnPSs2Protocol::callbackUrl('http://billing.example/', 'plugnpayss2') === '',
+    'callback url requires HTTPS'
+);
+
 $logger = new PnPSs2Logger(sys_get_temp_dir(), false);
 $sanitized = $logger->sanitize([
     'pt_card_number' => '4111111111111111',
     'card_cvv' => '123',
+    'pt_card_cvv' => '456',
     'publisher-password' => 'secret',
     'pt_gateway_account' => 'pnpdemo',
+    'cvvresp' => 'M',
+    'pi_error' => 'Declined card 4111111111111111',
 ]);
 assert_true($sanitized['pt_card_number'] === 'XXXXXXXXXXXX1111', 'PAN last four only');
 assert_true($sanitized['card_cvv'] === '***REDACTED***', 'CVV redacted');
+assert_true($sanitized['pt_card_cvv'] === '***REDACTED***', 'pt_card_cvv redacted');
 assert_true($sanitized['publisher-password'] === '***REDACTED***', 'password redacted');
 assert_true($sanitized['pt_gateway_account'] === 'pnpdemo', 'account not redacted');
+assert_true($sanitized['cvvresp'] === 'M', 'cvvresp is not a secret');
+assert_true(strpos($sanitized['pi_error'], '4111111111111111') === false, 'PAN masked inside free-text');
 assert_true($logger->isEnabled() === false, 'logger disabled by default in this check');
 
 $gateway = dirname(__DIR__) . '/src/ss2/modules/gateways/plugnpayss2.php';
@@ -116,6 +133,7 @@ assert_true($gatewaySrc !== '', 'gateway file is present');
 assert_true($callbackSrc !== '', 'callback file is present');
 assert_true(str_contains($gatewaySrc, 'function plugnpayss2_link'), 'gateway defines _link');
 assert_true(str_contains($gatewaySrc, 'not configured'), 'gateway refuses empty account');
+assert_true(str_contains($gatewaySrc, 'HTTPS is required'), 'gateway requires HTTPS callback URL');
 assert_true(str_contains($gatewaySrc, 'PnPSs2Protocol::buildHostedFields'), 'gateway uses protocol helper');
 assert_true(str_contains($gatewaySrc, 'htmlspecialchars'), 'gateway HTML-escapes form fields');
 assert_true(!str_contains($gatewaySrc, 'function plugnpayss2_refund'), 'gateway does not stub refund');
@@ -128,6 +146,8 @@ assert_true(str_contains($callbackSrc, 'PnPSs2Protocol::isSuccessfulResponse'), 
 assert_true(str_contains($callbackSrc, 'addInvoicePayment'), 'callback records invoice payment');
 assert_true(str_contains($callbackSrc, 'invoiceViewUrl'), 'callback redirects to invoice');
 assert_true(str_contains($callbackSrc, 'Missing Transaction ID'), 'callback requires transaction id');
+assert_true(str_contains($callbackSrc, 'Invalid request'), 'callback rejects non-POST');
+assert_true(str_contains($callbackSrc, 'sanitize'), 'callback sanitizes gateway log');
 assert_true(!str_contains($callbackSrc, 'REMOTE_ADDR'), 'callback does not use IP allowlist');
 
 if ($failed > 0) {

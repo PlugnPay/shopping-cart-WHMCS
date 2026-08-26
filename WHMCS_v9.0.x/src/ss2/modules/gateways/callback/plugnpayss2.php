@@ -63,11 +63,17 @@ function plugnpayss2_transactionExists(string $transactionId): bool
 function plugnpayss2_redirectToInvoice(string $systemUrl, $invoiceId): void
 {
     $url = PnPSs2Protocol::invoiceViewUrl($systemUrl, $invoiceId !== '' && $invoiceId !== null ? $invoiceId : '0');
-    if (!headers_sent()) {
+    if ($url !== '' && !headers_sent()) {
         header('Location: ' . $url);
     }
-    echo '<p><a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '">Return to invoice</a></p>';
+    if ($url !== '') {
+        echo '<p><a href="' . htmlspecialchars($url, ENT_QUOTES, 'UTF-8') . '">Return to invoice</a></p>';
+    }
     exit;
+}
+
+if (strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? '')) !== 'POST') {
+    die('Invalid request');
 }
 
 $gatewayModuleName = basename(__FILE__, '.php');
@@ -87,9 +93,10 @@ $invoiceId = PnPSs2Protocol::callbackInvoiceId($_POST);
 $transactionId = PnPSs2Protocol::callbackTransactionId($_POST);
 $paymentAmount = PnPSs2Protocol::callbackAmount($_POST);
 $paymentFee = PnPSs2Protocol::callbackFee($_POST);
-$expectedAmount = PnPSs2Protocol::extractCustomValue($_POST, PnPSs2Protocol::CUSTOM_AMOUNT);
-$accountId = trim((string)($gatewayParams['accountId'] ?? ''));
-$systemUrl = (string)($gatewayParams['systemurl'] ?? '');
+$expectedRaw = PnPSs2Protocol::extractCustomValue($_POST, PnPSs2Protocol::CUSTOM_AMOUNT);
+$expectedAmount = ($expectedRaw === '') ? '' : PnPSs2Protocol::filterAmount($expectedRaw);
+$accountId = PnPSs2Protocol::filterAccount($gatewayParams['accountId'] ?? '');
+$systemUrl = PnPSs2Protocol::filterString($gatewayParams['systemurl'] ?? '', 2048);
 
 $success = PnPSs2Protocol::isSuccessfulResponse($_POST);
 $transactionStatus = $success ? 'Success' : 'Failure';

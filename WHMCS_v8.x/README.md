@@ -6,6 +6,8 @@ This is the **legacy** sample-based beta. For WHMCS **9.0.x**, use [../WHMCS_v9.
 
 The module is an **untested beta**. It was converted from the WHMCS sample third-party gateway without a production WHMCS license. Test on a non-production system before going live.
 
+This 8.x sample does **not** apply the 9.0.x PCI input filtering and log-masking controls. Use the 9.0.x modules when you can.
+
 ## Choose a module
 
 | | Smart Screens v2 |

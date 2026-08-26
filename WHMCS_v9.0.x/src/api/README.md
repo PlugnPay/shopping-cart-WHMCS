@@ -1,6 +1,6 @@
 # PlugnPay Remote API Module for WHMCS 9.0.x
 
-**Version:** 1.0.1  
+**Version:** 1.0.2  
 **Target:** WHMCS **9.0.7** (compatible with 9.0.x)  
 **Status:** Protocol tests included; validate on a non-production WHMCS 9.0.7 system before production
 
@@ -13,7 +13,8 @@ This is a WHMCS **merchant** gateway (`modules/gateways/`). It collects card dat
 - Onsite credit card collection (checkout stays in the WHMCS Client Area)
 - Authorize-only (`authonly`) or Sale (`authpostauth`)
 - Production only (HTTPS required; no Test/Production toggle)
-- Debug logging with PAN / CVV / password redaction
+- Debug logging with PAN / CVV / password redaction (including PAN found in free-text)
+- Input filtering on all fields sent to PlugnPay
 - PHP 8.2+ / WHMCS 9.0.x (gateway API 1.1)
 - Requires PHP cURL with SSL
 
@@ -33,7 +34,16 @@ This module does **not** include WHMCS admin Refund. Settle or reverse transacti
 
 ## PCI notice
 
-This module collects cardholder data on your server, which increases PCI DSS scope. Client Area **HTTPS is required**. Full PAN, CVV, and publisher-password are never written to debug logs or the WHMCS gateway log (`rawdata` is sanitized).
+This module collects cardholder data on your server, which increases PCI DSS scope. Client Area **HTTPS is required**. The module:
+
+- Transmits CHD only over TLS to `pnpremote.cgi` (peer verify, HTTPS-only, no redirects)
+- Does not store PAN, CVV, or the Remote Client Password
+- Filters inbound fields (type, length, control characters) before they are sent
+- Masks PAN (last four only) and redacts CVV, track data, PIN, and passwords in debug logs and WHMCS `rawdata`
+- Unsets card fields after the capture request
+- Writes debug files under `logs/` with restrictive permissions (web access denied)
+
+Full PAN, CVV, and publisher-password are never written to debug logs or the WHMCS gateway log.
 
 ## Requirements
 
@@ -114,7 +124,7 @@ Enable **Debug Logging** for sanitized files:
 modules/gateways/plugnpayapi/logs/plugnpay_api_YYYYMMDD.log
 ```
 
-Never logged: full card number, CVV, or publisher-password.
+Never logged: full card number (PAN is last-four only, including PAN found in free-text), CVV, track data, PIN, or publisher-password.
 
 ## Troubleshooting
 

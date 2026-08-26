@@ -15,7 +15,7 @@ class PnPApi
 {
     public const ENDPOINT = 'https://pay1.plugnpay.com/payment/pnpremote.cgi';
     public const CLIENT_IDENTIFIER = 'WHMCS_API';
-    public const VERSION = '1.0.1';
+    public const VERSION = '1.0.2';
 
     private string $publisherName;
     private string $publisherPassword;
@@ -28,8 +28,8 @@ class PnPApi
 
     public function __construct(string $publisherName, string $publisherPassword, ?PnPLogger $logger = null)
     {
-        $this->publisherName = $publisherName;
-        $this->publisherPassword = $publisherPassword;
+        $this->publisherName = self::filterAccount($publisherName);
+        $this->publisherPassword = self::filterPassword($publisherPassword);
         $this->logger = $logger;
     }
 
@@ -56,17 +56,160 @@ class PnPApi
         return $this->commInfo;
     }
 
+    public static function clip(string $value, int $maxLen): string
+    {
+        if ($maxLen < 1) {
+            return '';
+        }
+        if (function_exists('mb_substr') && function_exists('mb_strlen')) {
+            return mb_strlen($value) > $maxLen ? (string)mb_substr($value, 0, $maxLen) : $value;
+        }
+
+        return strlen($value) > $maxLen ? substr($value, 0, $maxLen) : $value;
+    }
+
+    /**
+     * Strip NULs and other control characters, then clip.
+     */
+    public static function filterString(mixed $value, int $maxLen = 255): string
+    {
+        $s = trim((string)$value);
+        $s = str_replace("\0", '', $s);
+        $s = preg_replace('/[\x00-\x1F\x7F]/', '', $s);
+        $s = is_string($s) ? $s : '';
+
+        return self::clip($s, $maxLen);
+    }
+
+    public static function filterDigits(mixed $value, int $maxLen = 32): string
+    {
+        $s = preg_replace('/\D/', '', (string)$value) ?? '';
+
+        return substr($s, 0, $maxLen);
+    }
+
+    public static function filterAmount(mixed $value): string
+    {
+        if (is_string($value)) {
+            $value = str_replace([',', ' '], '', $value);
+        }
+        $n = (float)$value;
+        if (!is_finite($n) || $n < 0) {
+            $n = 0.0;
+        }
+
+        return number_format($n, 2, '.', '');
+    }
+
+    public static function filterCurrency(mixed $value): string
+    {
+        $s = strtoupper(preg_replace('/[^A-Za-z]/', '', (string)$value) ?? '');
+
+        return substr($s, 0, 3);
+    }
+
+    public static function filterEmail(mixed $value): string
+    {
+        $s = self::filterString($value, 254);
+        if ($s === '' || filter_var($s, FILTER_VALIDATE_EMAIL) === false) {
+            return '';
+        }
+
+        return $s;
+    }
+
+    public static function filterIp(mixed $value): string
+    {
+        $s = trim((string)$value);
+        if ($s === '' || filter_var($s, FILTER_VALIDATE_IP) === false) {
+            return '';
+        }
+
+        return $s;
+    }
+
+    public static function filterInvoiceId(mixed $value): string
+    {
+        return self::filterDigits($value, 20);
+    }
+
+    public static function filterAccount(mixed $value): string
+    {
+        $s = preg_replace('/[^A-Za-z0-9._@-]/', '', (string)$value) ?? '';
+
+        return substr($s, 0, 50);
+    }
+
+    public static function filterPassword(mixed $value): string
+    {
+        $s = str_replace("\0", '', (string)$value);
+        $s = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $s) ?? '';
+
+        return self::clip(trim($s), 128);
+    }
+
+    public static function filterCardNumber(mixed $value): string
+    {
+        $s = self::filterDigits($value, 19);
+        $len = strlen($s);
+        if ($len < 13) {
+            return '';
+        }
+
+        return $s;
+    }
+
+    public static function filterCvv(mixed $value): string
+    {
+        $s = self::filterDigits($value, 4);
+        $len = strlen($s);
+        if ($len < 3) {
+            return '';
+        }
+
+        return $s;
+    }
+
+    public static function filterCountry(mixed $value): string
+    {
+        $s = strtoupper(preg_replace('/[^A-Za-z]/', '', (string)$value) ?? '');
+
+        return substr($s, 0, 2);
+    }
+
+    public static function filterPhone(mixed $value): string
+    {
+        $s = preg_replace('/[^0-9+\-(). ]/', '', (string)$value) ?? '';
+
+        return substr(trim($s), 0, 32);
+    }
+
+    public static function filterHttpsUrl(mixed $value): string
+    {
+        $s = self::filterString($value, 2048);
+        if ($s === '' || stripos($s, 'https://') !== 0) {
+            return '';
+        }
+
+        return $s;
+    }
+
     /**
      * WHMCS supplies expiry as MMYY; Remote API expects MM/YY.
      */
     public static function formatCardExp(string $exp): string
     {
-        $digits = preg_replace('/\D/', '', $exp) ?? '';
-        if (strlen($digits) === 4) {
-            return substr($digits, 0, 2) . '/' . substr($digits, 2, 2);
+        $digits = substr(preg_replace('/\D/', '', $exp) ?? '', 0, 4);
+        if (strlen($digits) !== 4) {
+            return '';
         }
 
-        return trim($exp);
+        $month = (int)substr($digits, 0, 2);
+        if ($month < 1 || $month > 12) {
+            return '';
+        }
+
+        return substr($digits, 0, 2) . '/' . substr($digits, 2, 2);
     }
 
     /**
@@ -103,8 +246,9 @@ class PnPApi
      */
     public static function transactionId(array $response): string
     {
-        $orderId = trim((string)($response['orderID'] ?? $response['orderid'] ?? ''));
-        return $orderId;
+        $orderId = preg_replace('/[^A-Za-z0-9._-]/', '', (string)($response['orderID'] ?? $response['orderid'] ?? '')) ?? '';
+
+        return substr($orderId, 0, 64);
     }
 
     /**
@@ -112,12 +256,12 @@ class PnPApi
      */
     public static function declineReason(array $response): string
     {
-        $msg = trim((string)($response['MErrMsg'] ?? $response['auth-msg'] ?? ''));
+        $msg = self::filterString((string)($response['MErrMsg'] ?? $response['auth-msg'] ?? ''), 255);
         if ($msg !== '') {
             return $msg;
         }
 
-        $status = trim((string)($response['FinalStatus'] ?? ''));
+        $status = self::filterString((string)($response['FinalStatus'] ?? ''), 64);
         return $status !== '' ? $status : 'Declined';
     }
 
@@ -129,12 +273,12 @@ class PnPApi
      */
     public static function buildAuthorizeFields(array $input): array
     {
-        $amount = (string)$input['amount'];
+        $amount = self::filterAmount($input['amount'] ?? 0);
         $authtype = ((string)($input['authtype'] ?? 'authonly') === 'authpostauth')
             ? 'authpostauth'
             : 'authonly';
 
-        $orderUid = (string)($input['invoice_id'] ?? $input['order_uid'] ?? '');
+        $orderUid = self::filterInvoiceId($input['invoice_id'] ?? $input['order_uid'] ?? '');
 
         $fields = [
             'mode' => 'auth',
@@ -145,38 +289,38 @@ class PnPApi
             'orderID' => $orderUid,
             'acct_code' => $orderUid,
             'card-amount' => $amount,
-            'card-number' => preg_replace('/\D/', '', (string)($input['card_number'] ?? '')) ?? '',
+            'card-number' => self::filterCardNumber($input['card_number'] ?? ''),
             'card-exp' => self::formatCardExp((string)($input['card_exp'] ?? '')),
-            'card-name' => (string)($input['card_name'] ?? ''),
-            'card-company' => (string)($input['card_company'] ?? ''),
-            'card-address1' => (string)($input['card_address1'] ?? ''),
-            'card-address2' => (string)($input['card_address2'] ?? ''),
-            'card-city' => (string)($input['card_city'] ?? ''),
-            'card-state' => (string)($input['card_state'] ?? ''),
-            'card-zip' => (string)($input['card_zip'] ?? ''),
-            'card-country' => (string)($input['card_country'] ?? ''),
-            'phone' => (string)($input['phone'] ?? ''),
-            'email' => (string)($input['email'] ?? ''),
-            'shipname' => (string)($input['ship_name'] ?? ''),
-            'address1' => (string)($input['ship_address1'] ?? ''),
-            'address2' => (string)($input['ship_address2'] ?? ''),
-            'city' => (string)($input['ship_city'] ?? ''),
-            'state' => (string)($input['ship_state'] ?? ''),
-            'zip' => (string)($input['ship_zip'] ?? ''),
-            'country' => (string)($input['ship_country'] ?? ''),
-            'shipping' => (string)($input['shipping'] ?? '0.00'),
-            'tax' => (string)($input['tax'] ?? '0.00'),
-            'currency' => (string)($input['currency'] ?? ''),
-            'ipaddress' => (string)($input['ip_address'] ?? ''),
+            'card-name' => self::filterString($input['card_name'] ?? '', 80),
+            'card-company' => self::filterString($input['card_company'] ?? '', 80),
+            'card-address1' => self::filterString($input['card_address1'] ?? '', 128),
+            'card-address2' => self::filterString($input['card_address2'] ?? '', 128),
+            'card-city' => self::filterString($input['card_city'] ?? '', 64),
+            'card-state' => self::filterString($input['card_state'] ?? '', 64),
+            'card-zip' => self::filterString($input['card_zip'] ?? '', 16),
+            'card-country' => self::filterCountry($input['card_country'] ?? ''),
+            'phone' => self::filterPhone($input['phone'] ?? ''),
+            'email' => self::filterEmail($input['email'] ?? ''),
+            'shipname' => self::filterString($input['ship_name'] ?? '', 80),
+            'address1' => self::filterString($input['ship_address1'] ?? '', 128),
+            'address2' => self::filterString($input['ship_address2'] ?? '', 128),
+            'city' => self::filterString($input['ship_city'] ?? '', 64),
+            'state' => self::filterString($input['ship_state'] ?? '', 64),
+            'zip' => self::filterString($input['ship_zip'] ?? '', 16),
+            'country' => self::filterCountry($input['ship_country'] ?? ''),
+            'shipping' => self::filterAmount($input['shipping'] ?? '0.00'),
+            'tax' => self::filterAmount($input['tax'] ?? '0.00'),
+            'currency' => self::filterCurrency($input['currency'] ?? ''),
+            'ipaddress' => self::filterIp($input['ip_address'] ?? ''),
             'dontsndmail' => 'yes',
         ];
 
-        $cvv = trim((string)($input['card_cvv'] ?? ''));
+        $cvv = self::filterCvv($input['card_cvv'] ?? '');
         if ($cvv !== '') {
             $fields['card-cvv'] = $cvv;
         }
 
-        $publisherEmail = trim((string)($input['publisher_email'] ?? ''));
+        $publisherEmail = self::filterEmail($input['publisher_email'] ?? '');
         if ($publisherEmail !== '') {
             $fields['publisher-email'] = $publisherEmail;
             $fields['notify-email'] = $publisherEmail;
@@ -193,10 +337,11 @@ class PnPApi
                 if (!is_array($product)) {
                     continue;
                 }
-                $fields['item' . $j] = (string)($product['sku'] ?? $product['model'] ?? '');
-                $fields['cost' . $j] = number_format((float)($product['price'] ?? $product['cost'] ?? 0), 2, '.', '');
-                $fields['quantity' . $j] = (string)($product['quantity'] ?? $product['qty'] ?? 1);
-                $fields['description' . $j] = substr(strip_tags((string)($product['name'] ?? '')), 0, 255);
+                $fields['item' . $j] = self::filterString($product['sku'] ?? $product['model'] ?? '', 32);
+                $fields['cost' . $j] = self::filterAmount($product['price'] ?? $product['cost'] ?? 0);
+                $qty = max(1, (int)self::filterDigits($product['quantity'] ?? $product['qty'] ?? 1, 6));
+                $fields['quantity' . $j] = (string)$qty;
+                $fields['description' . $j] = self::filterString(strip_tags((string)($product['name'] ?? '')), 255);
                 $j++;
             }
         }
@@ -214,10 +359,14 @@ class PnPApi
 
         $out = [];
         foreach ($parsed as $key => $value) {
+            $keyStr = self::filterString((string)$key, 64);
+            if ($keyStr === '') {
+                continue;
+            }
             if (is_array($value)) {
-                $out[(string)$key] = implode(',', $value);
+                $out[$keyStr] = self::filterString(implode(',', $value), 512);
             } else {
-                $out[(string)$key] = (string)$value;
+                $out[$keyStr] = self::filterString((string)$value, 512);
             }
         }
 
@@ -265,7 +414,7 @@ class PnPApi
         }
 
         $ch = curl_init(self::ENDPOINT);
-        curl_setopt_array($ch, [
+        $opts = [
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => $body,
             CURLOPT_RETURNTRANSFER => true,
@@ -273,16 +422,24 @@ class PnPApi
             CURLOPT_CONNECTTIMEOUT => 15,
             CURLOPT_SSL_VERIFYPEER => true,
             CURLOPT_SSL_VERIFYHOST => 2,
+            CURLOPT_FOLLOWLOCATION => false,
             CURLOPT_HTTPHEADER => [
                 'Content-Type: application/x-www-form-urlencoded',
             ],
-        ]);
+        ];
+        if (defined('CURLPROTO_HTTPS')) {
+            $opts[CURLOPT_PROTOCOLS] = CURLPROTO_HTTPS;
+            $opts[CURLOPT_REDIR_PROTOCOLS] = CURLPROTO_HTTPS;
+        }
+        curl_setopt_array($ch, $opts);
 
         $raw = curl_exec($ch);
         $this->commErrNo = (int)curl_errno($ch);
         $this->commError = (string)curl_error($ch);
         $this->commInfo = curl_getinfo($ch) ?: [];
         curl_close($ch);
+
+        unset($payload['publisher-password'], $payload['card-number'], $payload['card-cvv'], $body);
 
         $this->lastRawResponse = is_string($raw) ? $raw : '';
 

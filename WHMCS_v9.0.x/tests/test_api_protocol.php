@@ -27,6 +27,21 @@ function assert_true(bool $cond, string $label): void
 assert_true(PnPApi::formatCardExp('0130') === '01/30', 'MMYY becomes MM/YY');
 assert_true(PnPApi::formatCardExp('01/30') === '01/30', 'MM/YY is kept');
 assert_true(PnPApi::formatCardExp('01-30') === '01/30', 'MM-YY digits become MM/YY');
+assert_true(PnPApi::formatCardExp('9930') === '', 'invalid month is rejected');
+assert_true(PnPApi::filterCardNumber('4111-1111-1111-1111') === '4111111111111111', 'PAN digits only');
+assert_true(PnPApi::filterCardNumber('411111111111') === '', 'PAN shorter than 13 is rejected');
+assert_true(PnPApi::filterCvv('12a3') === '123', 'CVV digits only');
+assert_true(PnPApi::filterCvv('12') === '', 'CVV shorter than 3 is rejected');
+assert_true(PnPApi::filterInvoiceId('42<script>') === '42', 'invoice id digits only');
+assert_true(PnPApi::filterString("Jane\0Doe\n") === 'JaneDoe', 'control characters stripped');
+assert_true(PnPApi::filterEmail('not-an-email') === '', 'invalid email dropped');
+assert_true(PnPApi::filterEmail('jane@example.com') === 'jane@example.com', 'valid email kept');
+assert_true(PnPApi::filterIp('not-an-ip') === '', 'invalid IP dropped');
+assert_true(PnPApi::filterIp('203.0.113.10') === '203.0.113.10', 'valid IP kept');
+assert_true(PnPApi::filterAmount('-5') === '0.00', 'negative amount becomes zero');
+assert_true(PnPApi::filterCurrency('usd1') === 'USD', 'currency letters only');
+assert_true(PnPApi::filterHttpsUrl('http://example.com') === '', 'HTTP URL rejected');
+assert_true(PnPApi::filterHttpsUrl('https://example.com/pay') === 'https://example.com/pay', 'HTTPS URL kept');
 
 $fields = PnPApi::buildAuthorizeFields([
     'authtype' => 'authonly',
@@ -75,7 +90,7 @@ assert_true($fields['cost1'] === '6.17', 'line item cost');
 assert_true($fields['quantity1'] === '2', 'line item qty');
 assert_true(PnPApi::ENDPOINT === 'https://pay1.plugnpay.com/payment/pnpremote.cgi', 'endpoint');
 assert_true(PnPApi::CLIENT_IDENTIFIER === 'WHMCS_API', 'client identifier');
-assert_true(PnPApi::VERSION === '1.0.1', 'protocol version');
+assert_true(PnPApi::VERSION === '1.0.2', 'protocol version');
 
 $sale = PnPApi::buildAuthorizeFields([
     'authtype' => 'authpostauth',
@@ -116,7 +131,10 @@ $sanitized = $logger->sanitize([
     'publisher-password' => 'secret',
     'cardnum' => '4111111111111111',
     'cccvv' => '999',
+    'remotePassword' => 'secret2',
     'publisher-name' => 'pnpdemo',
+    'cvvresp' => 'M',
+    'MErrMsg' => 'Declined card 4111111111111111',
     'fields' => [
         'card-number' => '4111111111111111',
         'publisher-password' => 'secret',
@@ -127,8 +145,12 @@ assert_true($sanitized['card-cvv'] === '***REDACTED***', 'CVV redacted');
 assert_true($sanitized['publisher-password'] === '***REDACTED***', 'password redacted');
 assert_true($sanitized['cardnum'] === 'XXXXXXXXXXXX1111', 'WHMCS cardnum last four only');
 assert_true($sanitized['cccvv'] === '***REDACTED***', 'WHMCS cccvv redacted');
+assert_true($sanitized['remotePassword'] === '***REDACTED***', 'remotePassword redacted');
 assert_true($sanitized['publisher-name'] === 'pnpdemo', 'account not redacted');
+assert_true($sanitized['cvvresp'] === 'M', 'cvvresp is not a secret');
 assert_true($sanitized['fields']['card-number'] === 'XXXXXXXXXXXX1111', 'nested PAN redacted');
+assert_true(strpos($sanitized['MErrMsg'], '4111111111111111') === false, 'PAN masked inside free-text');
+assert_true(strpos($sanitized['MErrMsg'], '1111') !== false, 'PAN last four remains in free-text');
 assert_true(strpos(print_r($sanitized, true), '4111111111111111') === false, 'sanitized dump has no full PAN');
 assert_true(strpos(print_r($sanitized, true), 'secret') === false, 'sanitized dump has no password');
 
@@ -140,11 +162,16 @@ assert_true(!str_contains($gatewaySrc, 'function plugnpayapi_link'), 'gateway ha
 assert_true(!str_contains($gatewaySrc, 'function plugnpayapi_refund'), 'gateway does not stub refund');
 assert_true(str_contains($gatewaySrc, "'DisableLocalCreditCardInput' => false"), 'WHMCS collects card fields');
 assert_true(str_contains($gatewaySrc, 'PnPApi::buildAuthorizeFields'), 'gateway uses protocol helper');
-assert_true(str_contains($gatewaySrc, 'https://'), 'gateway requires HTTPS systemurl');
+assert_true(str_contains($gatewaySrc, 'filterHttpsUrl'), 'gateway requires HTTPS systemurl');
 assert_true(str_contains($gatewaySrc, 'sanitize'), 'gateway sanitizes rawdata');
 assert_true(str_contains($gatewaySrc, 'WHMCS-'), 'gateway falls back when orderID is missing');
-assert_true(str_contains($gatewaySrc, 'number_format'), 'gateway formats amount to two decimals');
+assert_true(str_contains($gatewaySrc, 'filterAmount'), 'gateway formats amount to two decimals');
+assert_true(str_contains($gatewaySrc, 'unset'), 'gateway unsets card data after capture');
 assert_true(!str_contains($gatewaySrc, 'tblinvoiceitems'), 'gateway does not send invoice line items');
+$apiSrc = (string)file_get_contents($base . '/PnPApi.php');
+assert_true(str_contains($apiSrc, 'CURLOPT_SSL_VERIFYPEER'), 'cURL verifies TLS peer');
+assert_true(str_contains($apiSrc, 'CURLPROTO_HTTPS'), 'cURL is HTTPS-only');
+assert_true(str_contains($apiSrc, 'CURLOPT_FOLLOWLOCATION => false'), 'cURL does not follow redirects');
 
 if ($failed > 0) {
     echo "\n{$failed} check(s) failed\n";

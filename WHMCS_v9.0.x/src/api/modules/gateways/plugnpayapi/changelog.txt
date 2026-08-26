@@ -1,3 +1,10 @@
+v1.0.2 - 2026-08-26
+- Filter all inbound fields (control characters, length, type allowlists)
+- Mask PAN in log values (Luhn) as well as known keys; never log CVV or passwords
+- Restrict cURL to HTTPS, verify TLS, and do not follow redirects
+- Unset card data after the gateway request
+- Restrict debug log file permissions (0750 / 0640)
+
 v1.0.1 - 2026-08-26
 - Do not send WHMCS invoice line items (tax/credit totals can disagree with easycart)
 - Format capture amount to two decimal places

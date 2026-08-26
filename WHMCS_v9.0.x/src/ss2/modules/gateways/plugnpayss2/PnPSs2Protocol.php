@@ -14,7 +14,122 @@ class PnPSs2Protocol
     public const CLIENT_IDENTIFIER = 'WHMCS_SS2';
     public const CUSTOM_INVOICE = 'whmcsinvoice';
     public const CUSTOM_AMOUNT = 'whmcsamount';
-    public const VERSION = '1.0.1';
+    public const VERSION = '1.0.2';
+
+    public static function clip(string $value, int $maxLen): string
+    {
+        if ($maxLen < 1) {
+            return '';
+        }
+        if (function_exists('mb_substr') && function_exists('mb_strlen')) {
+            return mb_strlen($value) > $maxLen ? (string)mb_substr($value, 0, $maxLen) : $value;
+        }
+
+        return strlen($value) > $maxLen ? substr($value, 0, $maxLen) : $value;
+    }
+
+    /**
+     * Strip NULs and other control characters, then clip.
+     */
+    public static function filterString(mixed $value, int $maxLen = 255): string
+    {
+        $s = trim((string)$value);
+        $s = str_replace("\0", '', $s);
+        $s = preg_replace('/[\x00-\x1F\x7F]/', '', $s);
+        $s = is_string($s) ? $s : '';
+
+        return self::clip($s, $maxLen);
+    }
+
+    public static function filterDigits(mixed $value, int $maxLen = 32): string
+    {
+        $s = preg_replace('/\D/', '', (string)$value) ?? '';
+
+        return substr($s, 0, $maxLen);
+    }
+
+    public static function filterAmount(mixed $value): string
+    {
+        if (is_string($value)) {
+            $value = str_replace([',', ' '], '', $value);
+        }
+        $n = (float)$value;
+        if (!is_finite($n) || $n < 0) {
+            $n = 0.0;
+        }
+
+        return number_format($n, 2, '.', '');
+    }
+
+    public static function filterCurrency(mixed $value): string
+    {
+        $s = strtoupper(preg_replace('/[^A-Za-z]/', '', (string)$value) ?? '');
+
+        return substr($s, 0, 3);
+    }
+
+    public static function filterEmail(mixed $value): string
+    {
+        $s = self::filterString($value, 254);
+        if ($s === '' || filter_var($s, FILTER_VALIDATE_EMAIL) === false) {
+            return '';
+        }
+
+        return $s;
+    }
+
+    public static function filterIp(mixed $value): string
+    {
+        $s = trim((string)$value);
+        if ($s === '' || filter_var($s, FILTER_VALIDATE_IP) === false) {
+            return '';
+        }
+
+        return $s;
+    }
+
+    public static function filterInvoiceId(mixed $value): string
+    {
+        return self::filterDigits($value, 20);
+    }
+
+    public static function filterAccount(mixed $value): string
+    {
+        $s = preg_replace('/[^A-Za-z0-9._@-]/', '', (string)$value) ?? '';
+
+        return substr($s, 0, 50);
+    }
+
+    public static function filterTransId(mixed $value): string
+    {
+        $s = preg_replace('/[^A-Za-z0-9._-]/', '', (string)$value) ?? '';
+
+        return substr($s, 0, 64);
+    }
+
+    public static function filterCountry(mixed $value): string
+    {
+        $s = strtoupper(preg_replace('/[^A-Za-z]/', '', (string)$value) ?? '');
+
+        return substr($s, 0, 2);
+    }
+
+    public static function filterPhone(mixed $value): string
+    {
+        $s = preg_replace('/[^0-9+\-(). ]/', '', (string)$value) ?? '';
+
+        return substr(trim($s), 0, 32);
+    }
+
+    public static function filterHttpsUrl(mixed $value): string
+    {
+        $s = self::filterString($value, 2048);
+        if ($s === '' || stripos($s, 'https://') !== 0) {
+            return '';
+        }
+
+        return $s;
+    }
 
     /**
      * @param array<string, mixed> $response
@@ -55,9 +170,7 @@ class PnPSs2Protocol
      */
     public static function amountsMatch($returnedAmount, $expectedAmount): bool
     {
-        $a = number_format((float)$returnedAmount, 2, '.', '');
-        $b = number_format((float)$expectedAmount, 2, '.', '');
-        return $a === $b;
+        return self::filterAmount($returnedAmount) === self::filterAmount($expectedAmount);
     }
 
     /**
@@ -65,12 +178,12 @@ class PnPSs2Protocol
      */
     public static function gatewayAccountMatches(array $response, string $expected): bool
     {
-        $returned = trim((string)($response['pt_gateway_account'] ?? ''));
+        $returned = self::filterAccount($response['pt_gateway_account'] ?? '');
         if ($returned === '') {
             return true;
         }
 
-        return strcasecmp($returned, trim($expected)) === 0;
+        return strcasecmp($returned, self::filterAccount($expected)) === 0;
     }
 
     /**
@@ -80,10 +193,10 @@ class PnPSs2Protocol
     {
         $fromCustom = self::extractCustomValue($response, self::CUSTOM_INVOICE);
         if ($fromCustom !== '') {
-            return $fromCustom;
+            return self::filterInvoiceId($fromCustom);
         }
 
-        return trim((string)($response['pt_account_code_1'] ?? ''));
+        return self::filterInvoiceId($response['pt_account_code_1'] ?? '');
     }
 
     /**
@@ -91,7 +204,7 @@ class PnPSs2Protocol
      */
     public static function callbackTransactionId(array $response): string
     {
-        return trim((string)($response['pt_order_id'] ?? ''));
+        return self::filterTransId($response['pt_order_id'] ?? '');
     }
 
     /**
@@ -99,7 +212,12 @@ class PnPSs2Protocol
      */
     public static function callbackAmount(array $response): string
     {
-        return trim((string)($response['pt_transaction_amount'] ?? ''));
+        $raw = trim((string)($response['pt_transaction_amount'] ?? ''));
+        if ($raw === '') {
+            return '';
+        }
+
+        return self::filterAmount($raw);
     }
 
     /**
@@ -108,12 +226,18 @@ class PnPSs2Protocol
     public static function callbackFee(array $response): string
     {
         $fee = trim((string)($response['pt_convenience_fee_amount'] ?? ''));
-        return $fee === '' ? '0' : $fee;
+        return $fee === '' ? '0' : self::filterAmount($fee);
     }
 
     public static function callbackUrl(string $systemUrl, string $moduleName): string
     {
-        return rtrim($systemUrl, '/') . '/modules/gateways/callback/' . $moduleName . '.php';
+        $base = self::filterHttpsUrl(rtrim($systemUrl, '/') . '/');
+        $mod = preg_replace('/[^A-Za-z0-9_-]/', '', $moduleName) ?? '';
+        if ($base === '' || $mod === '') {
+            return '';
+        }
+
+        return rtrim($base, '/') . '/modules/gateways/callback/' . $mod . '.php';
     }
 
     /**
@@ -121,7 +245,13 @@ class PnPSs2Protocol
      */
     public static function invoiceViewUrl(string $systemUrl, $invoiceId): string
     {
-        return rtrim($systemUrl, '/') . '/viewinvoice.php?id=' . rawurlencode((string)$invoiceId);
+        $base = rtrim(self::filterString($systemUrl, 2048), '/');
+        $id = self::filterInvoiceId($invoiceId);
+        if ($base === '') {
+            return '';
+        }
+
+        return $base . '/viewinvoice.php?id=' . rawurlencode($id !== '' ? $id : '0');
     }
 
     /**
@@ -135,7 +265,7 @@ class PnPSs2Protocol
     public static function invoiceAmountDue($total, $credit = 0, $amountIn = 0, $amountOut = 0): string
     {
         $due = (float)$total - (float)$credit - (float)$amountIn + (float)$amountOut;
-        if ($due < 0) {
+        if (!is_finite($due) || $due < 0) {
             $due = 0.0;
         }
 
@@ -150,31 +280,31 @@ class PnPSs2Protocol
      */
     public static function buildHostedFields(array $input): array
     {
-        $invoiceId = (string)$input['invoice_id'];
-        $amount = (string)$input['amount'];
-        $currency = (string)$input['currency'];
+        $invoiceId = self::filterInvoiceId($input['invoice_id'] ?? '');
+        $amount = self::filterAmount($input['amount'] ?? 0);
+        $currency = self::filterCurrency($input['currency'] ?? '');
 
         return [
-            'pt_gateway_account' => trim((string)$input['gateway_account']),
+            'pt_gateway_account' => self::filterAccount($input['gateway_account'] ?? ''),
             'pt_transaction_amount' => $amount,
             'pt_currency' => $currency,
             'pt_currency_code' => $currency,
             'pb_post_auth' => 'no',
             'pt_account_code_1' => $invoiceId,
-            'pt_billing_company' => (string)($input['billing_company'] ?? ''),
-            'pt_payment_name' => (string)($input['billing_name'] ?? ''),
-            'pt_billing_address_1' => (string)($input['billing_address_1'] ?? ''),
-            'pt_billing_address_2' => (string)($input['billing_address_2'] ?? ''),
-            'pt_billing_city' => (string)($input['billing_city'] ?? ''),
-            'pt_billing_state' => (string)($input['billing_state'] ?? ''),
-            'pt_billing_postal_code' => (string)($input['billing_postal_code'] ?? ''),
-            'pt_billing_country' => (string)($input['billing_country'] ?? ''),
-            'pt_billing_phone_number' => (string)($input['billing_phone'] ?? ''),
-            'pt_billing_email_address' => (string)($input['billing_email'] ?? ''),
+            'pt_billing_company' => self::filterString($input['billing_company'] ?? '', 80),
+            'pt_payment_name' => self::filterString($input['billing_name'] ?? '', 80),
+            'pt_billing_address_1' => self::filterString($input['billing_address_1'] ?? '', 128),
+            'pt_billing_address_2' => self::filterString($input['billing_address_2'] ?? '', 128),
+            'pt_billing_city' => self::filterString($input['billing_city'] ?? '', 64),
+            'pt_billing_state' => self::filterString($input['billing_state'] ?? '', 64),
+            'pt_billing_postal_code' => self::filterString($input['billing_postal_code'] ?? '', 16),
+            'pt_billing_country' => self::filterCountry($input['billing_country'] ?? ''),
+            'pt_billing_phone_number' => self::filterPhone($input['billing_phone'] ?? ''),
+            'pt_billing_email_address' => self::filterEmail($input['billing_email'] ?? ''),
             'pt_client_identifier' => self::CLIENT_IDENTIFIER,
-            'pt_ip_address' => (string)($input['ip_address'] ?? ''),
+            'pt_ip_address' => self::filterIp($input['ip_address'] ?? ''),
             'pb_transition_type' => 'post',
-            'pb_success_url' => (string)$input['success_url'],
+            'pb_success_url' => self::filterHttpsUrl($input['success_url'] ?? ''),
             'pd_collect_shipping_information' => 'no',
             'pd_display_items' => 'no',
             'pt_custom_name_1' => self::CUSTOM_INVOICE,

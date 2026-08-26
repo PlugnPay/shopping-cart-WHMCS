@@ -81,14 +81,14 @@ function plugnpayapi_config()
  */
 function plugnpayapi_capture($params)
 {
-    $accountId = trim((string)($params['accountId'] ?? ''));
-    $remotePassword = (string)($params['remotePassword'] ?? '');
+    $accountId = PnPApi::filterAccount($params['accountId'] ?? '');
+    $remotePassword = PnPApi::filterPassword($params['remotePassword'] ?? '');
     $authType = ((string)($params['authType'] ?? 'authonly') === 'authpostauth')
         ? 'authpostauth'
         : 'authonly';
-    $systemUrl = (string)($params['systemurl'] ?? '');
-    $invoiceId = (string)($params['invoiceid'] ?? '');
-    $amount = number_format((float)($params['amount'] ?? 0), 2, '.', '');
+    $systemUrl = PnPApi::filterHttpsUrl($params['systemurl'] ?? '');
+    $invoiceId = PnPApi::filterInvoiceId($params['invoiceid'] ?? '');
+    $amount = PnPApi::filterAmount($params['amount'] ?? 0);
     $client = is_array($params['clientdetails'] ?? null) ? $params['clientdetails'] : [];
 
     $logger = new PnPLogger(
@@ -104,7 +104,7 @@ function plugnpayapi_capture($params)
         ];
     }
 
-    if (stripos($systemUrl, 'https://') !== 0) {
+    if ($systemUrl === '') {
         return [
             'status' => 'error',
             'declinereason' => 'Storefront HTTPS is required for Remote API card collection.',
@@ -112,47 +112,51 @@ function plugnpayapi_capture($params)
         ];
     }
 
-    $cardNumber = preg_replace('/\D/', '', (string)($params['cardnum'] ?? '')) ?? '';
-    if ($cardNumber === '') {
+    $cardNumber = PnPApi::filterCardNumber($params['cardnum'] ?? '');
+    $cardExp = PnPApi::formatCardExp((string)($params['cardexp'] ?? ''));
+    if ($cardNumber === '' || $cardExp === '') {
         return [
             'status' => 'declined',
-            'declinereason' => 'Card number is required.',
-            'rawdata' => 'Missing cardnum',
+            'declinereason' => 'A valid card number and expiry are required.',
+            'rawdata' => 'Invalid cardnum or cardexp',
         ];
     }
 
-    $billingName = trim((string)($client['firstname'] ?? '') . ' ' . (string)($client['lastname'] ?? ''));
+    $billingName = trim(
+        PnPApi::filterString($client['firstname'] ?? '', 40) . ' ' . PnPApi::filterString($client['lastname'] ?? '', 40)
+    );
 
     $fields = PnPApi::buildAuthorizeFields([
         'authtype' => $authType,
         'amount' => $amount,
-        'currency' => (string)($params['currency'] ?? ''),
+        'currency' => $params['currency'] ?? '',
         'invoice_id' => $invoiceId,
         'card_number' => $cardNumber,
-        'card_exp' => (string)($params['cardexp'] ?? ''),
+        'card_exp' => $cardExp,
         'card_name' => $billingName,
-        'card_cvv' => (string)($params['cccvv'] ?? ''),
-        'card_company' => (string)($client['companyname'] ?? ''),
-        'card_address1' => (string)($client['address1'] ?? ''),
-        'card_address2' => (string)($client['address2'] ?? ''),
-        'card_city' => (string)($client['city'] ?? ''),
-        'card_state' => (string)($client['state'] ?? ''),
-        'card_zip' => (string)($client['postcode'] ?? ''),
-        'card_country' => (string)($client['country'] ?? ''),
-        'phone' => (string)($client['phonenumber'] ?? ''),
-        'email' => (string)($client['email'] ?? ''),
+        'card_cvv' => $params['cccvv'] ?? '',
+        'card_company' => $client['companyname'] ?? '',
+        'card_address1' => $client['address1'] ?? '',
+        'card_address2' => $client['address2'] ?? '',
+        'card_city' => $client['city'] ?? '',
+        'card_state' => $client['state'] ?? '',
+        'card_zip' => $client['postcode'] ?? '',
+        'card_country' => $client['country'] ?? '',
+        'phone' => $client['phonenumber'] ?? '',
+        'email' => $client['email'] ?? '',
         'ship_name' => $billingName,
-        'ship_address1' => (string)($client['address1'] ?? ''),
-        'ship_address2' => (string)($client['address2'] ?? ''),
-        'ship_city' => (string)($client['city'] ?? ''),
-        'ship_state' => (string)($client['state'] ?? ''),
-        'ship_zip' => (string)($client['postcode'] ?? ''),
-        'ship_country' => (string)($client['country'] ?? ''),
-        'ip_address' => (string)($_SERVER['REMOTE_ADDR'] ?? ''),
+        'ship_address1' => $client['address1'] ?? '',
+        'ship_address2' => $client['address2'] ?? '',
+        'ship_city' => $client['city'] ?? '',
+        'ship_state' => $client['state'] ?? '',
+        'ship_zip' => $client['postcode'] ?? '',
+        'ship_country' => $client['country'] ?? '',
+        'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
     ]);
 
     $api = new PnPApi($accountId, $remotePassword, $logger);
     $response = $api->authorize($fields);
+    unset($fields['card-number'], $fields['card-cvv'], $cardNumber, $params);
     $safe = $logger->sanitize($response);
 
     if ($api->isApproved($response)) {

@@ -70,7 +70,7 @@ You may install both 9.0.x modules; enable only the payment method(s) you need.
 * Authorization Type: `authonly` or `authpostauth`.
 * Capture / void / refund are done in PlugnPay Merchant Admin (not from WHMCS).
 * On successful capture the invoice is marked paid in WHMCS so services can provision.
-* For WHMCS 9.0.x: payment module **v1.0.1**; target **9.0.7**.
+* For WHMCS 9.0.x: payment module **v1.0.2**; target **9.0.7**.
 * No public demo / test publisher — use merchant-supplied credentials.
 
 ### Smart Screens v2 (WHMCS 9.0.x)
@@ -79,15 +79,16 @@ You may install both 9.0.x modules; enable only the payment method(s) you need.
 * Supports Credit Card and other payment options configured on your PlugnPay account.
 * WHMCS does **not** collect sensitive payment data at checkout.
 * Customer is redirected to PlugnPay, then returned to the invoice after approval or decline.
-* HTTPS on your Client Area is strongly recommended (return URL / callback).
+* HTTPS on your Client Area is required (return URL / callback).
 * Transactions are authorization-only (`pb_post_auth=no`); capture / void / refund in PlugnPay Merchant Admin.
 * On successful authorization the invoice is marked paid in WHMCS so services can provision.
-* For WHMCS 9.0.x: payment module **v1.0.1**; target **9.0.7**.
+* For WHMCS 9.0.x: payment module **v1.0.2**; target **9.0.7**.
 * No public demo / test publisher — use merchant-supplied credentials.
 
 ### Smart Screens v2 (WHMCS 8.x legacy)
 
 * Same hosted checkout idea; sample-based **untested beta**. Prefer the 9.0.x package when you are on WHMCS 9.
+* This 8.x sample does **not** include the 9.0.x PCI input filtering and log-masking controls.
 
 ## Repository layout
 

@@ -66,13 +66,13 @@ function plugnpayss2_config()
  */
 function plugnpayss2_link($params)
 {
-    $accountId = trim((string)($params['accountId'] ?? ''));
-    $invoiceId = (string)$params['invoiceid'];
-    $amount = (string)$params['amount'];
-    $currencyCode = (string)$params['currency'];
-    $systemUrl = (string)$params['systemurl'];
-    $langPayNow = (string)$params['langpaynow'];
-    $moduleName = (string)$params['paymentmethod'];
+    $accountId = PnPSs2Protocol::filterAccount($params['accountId'] ?? '');
+    $invoiceId = PnPSs2Protocol::filterInvoiceId($params['invoiceid'] ?? '');
+    $amount = PnPSs2Protocol::filterAmount($params['amount'] ?? 0);
+    $currencyCode = PnPSs2Protocol::filterCurrency($params['currency'] ?? '');
+    $systemUrl = (string)($params['systemurl'] ?? '');
+    $langPayNow = PnPSs2Protocol::filterString($params['langpaynow'] ?? 'Pay Now', 80);
+    $moduleName = preg_replace('/[^A-Za-z0-9_-]/', '', (string)($params['paymentmethod'] ?? '')) ?? '';
     $client = is_array($params['clientdetails'] ?? null) ? $params['clientdetails'] : [];
 
     $logger = new PnPSs2Logger(
@@ -84,23 +84,32 @@ function plugnpayss2_link($params)
         return '<p>PlugnPay Smart Screens v2 is not configured. Please contact support.</p>';
     }
 
+    $successUrl = PnPSs2Protocol::callbackUrl($systemUrl, $moduleName !== '' ? $moduleName : 'plugnpayss2');
+    if ($successUrl === '') {
+        return '<p>Storefront HTTPS is required for Smart Screens v2 checkout.</p>';
+    }
+
     $fields = PnPSs2Protocol::buildHostedFields([
         'gateway_account' => $accountId,
         'amount' => $amount,
         'currency' => $currencyCode,
         'invoice_id' => $invoiceId,
-        'success_url' => PnPSs2Protocol::callbackUrl($systemUrl, $moduleName),
-        'billing_company' => (string)($client['companyname'] ?? ''),
-        'billing_name' => trim((string)($client['firstname'] ?? '') . ' ' . (string)($client['lastname'] ?? '')),
-        'billing_address_1' => (string)($client['address1'] ?? ''),
-        'billing_address_2' => (string)($client['address2'] ?? ''),
-        'billing_city' => (string)($client['city'] ?? ''),
-        'billing_state' => (string)($client['state'] ?? ''),
-        'billing_postal_code' => (string)($client['postcode'] ?? ''),
-        'billing_country' => (string)($client['country'] ?? ''),
-        'billing_phone' => (string)($client['phonenumber'] ?? ''),
-        'billing_email' => (string)($client['email'] ?? ''),
-        'ip_address' => (string)($_SERVER['REMOTE_ADDR'] ?? ''),
+        'success_url' => $successUrl,
+        'billing_company' => $client['companyname'] ?? '',
+        'billing_name' => trim(
+            PnPSs2Protocol::filterString($client['firstname'] ?? '', 40)
+            . ' '
+            . PnPSs2Protocol::filterString($client['lastname'] ?? '', 40)
+        ),
+        'billing_address_1' => $client['address1'] ?? '',
+        'billing_address_2' => $client['address2'] ?? '',
+        'billing_city' => $client['city'] ?? '',
+        'billing_state' => $client['state'] ?? '',
+        'billing_postal_code' => $client['postcode'] ?? '',
+        'billing_country' => $client['country'] ?? '',
+        'billing_phone' => $client['phonenumber'] ?? '',
+        'billing_email' => $client['email'] ?? '',
+        'ip_address' => $_SERVER['REMOTE_ADDR'] ?? '',
     ]);
 
     $logger->log('Submit-Data', $fields);
