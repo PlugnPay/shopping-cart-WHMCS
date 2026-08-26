@@ -1,0 +1,61 @@
+====================================================
+PlugnPay Smart Screens v2 Module (Hosted Payments)
+Payment module for WHMCS v8.x
+====================================================
+
+***** IMPORTANT NOTES *****
+This module is provided "AS IS". Limited technical support assistance
+will be given to help diagnose/address problems with this module.
+
+This package is an UNTESTED BETA. It was written without a production
+WHMCS license. Test fully on a non-production system before going live.
+
+Customers are redirected to PlugnPay hosted Smart Screens
+(https://pay1.plugnpay.com/pay/). WHMCS does not collect sensitive
+payment data. Storefront HTTPS is strongly recommended for the
+invoice return / callback.
+
+Refund and subscription cancel are not implemented in this module.
+Capture, void, and refund are performed in PlugnPay Merchant Admin.
+***************************
+
+To Install:
+
+1. Download whmcs_ss2_module.zip from this folder
+   (or use the src/ss2/ tree in this repository).
+
+2. Extract the package. Copy the gateway files into the WHMCS root
+   so you have:
+     modules/gateways/plugnpayss2.php
+     modules/gateways/callback/plugnpayss2.php
+
+   From this repo's development tree that is:
+     WHMCS_v8.x/src/ss2/modules/gateways/ → <whmcs>/modules/gateways/
+
+3. In WHMCS: Configuration → System Settings → Payment Gateways
+   → All Payment Gateways → activate
+   "PlugnPay Smart Screens v2 Payment Gateway Module".
+
+4. Enter Gateway Account (your PlugnPay username). Save Changes.
+
+5. Place a test invoice payment using your merchant account /
+   PlugnPay test procedures. Confirm the customer is redirected to
+   PlugnPay and returned to WHMCS after approval or decline.
+
+Requirements:
+
+- WHMCS 8.x (third-party gateway module API 1.1)
+- Overlay path: modules/gateways/
+- HTTPS recommended for the callback URL
+- PlugnPay gateway account username
+
+No Remote Client Password is required for Smart Screens v2.
+
+See the module README for sample-gateway notes and history:
+  src/ss2/README.md
+
+Also see the 8.x package overview:
+  WHMCS_v8.x/README.md
+
+Source tree (development):
+  src/ss2/

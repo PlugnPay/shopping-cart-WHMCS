@@ -1,47 +1,59 @@
 # Shopping Cart - WHMCS Payment Modules
 
-Easy to install payment modules for the WHMCS shopping cart.
-Multiple payment styles are supported, each covering a different checkout need.
+Easy to install payment modules for the [WHMCS](https://www.whmcs.com/) billing cart.
+**WHMCS 8.x** includes Smart Screens v2 hosted checkout.
 
-* Smart Screens v2 (Gateway Hosted Solution)
-  - [Download](./whmcd_ss2_module.zip)
+The package is an **untested beta** (no production WHMCS license was available when it was written). Test on a non-production system before going live.
 
-* Smart Screens v1 (Legacy Gateway Hosted Solution)
-  - [Download](./whmcd_ss1_module.zip)
-  
+## Downloads by WHMCS version
+
+### WHMCS v8.x (current — third-party gateway API 1.1)
+
+* **Smart Screens v2** — gateway hosted checkout
+  - [Download](./WHMCS_v8.x/whmcs_ss2_module.zip)
+  - Source: [./WHMCS_v8.x/src/ss2/](./WHMCS_v8.x/src/ss2/)
+  - Docs: [package README](./WHMCS_v8.x/README.md) · [INSTALL_SS2.txt](./WHMCS_v8.x/INSTALL_SS2.txt) · [module README](./WHMCS_v8.x/src/ss2/README.md)
+
+Package overview: [./WHMCS_v8.x/README.md](./WHMCS_v8.x/README.md)
+
 ## Installation
 
-For complete instructions on how to install/setup any of our payment modules, please refer to the README file within the zip file of that module.
+For complete instructions, open the README inside the zip (or the linked docs above).
+
+### WHMCS 8.x — Smart Screens v2
+
+1. Download [whmcs_ss2_module.zip](./WHMCS_v8.x/whmcs_ss2_module.zip).
+2. Copy `modules/gateways/plugnpayss2.php` and `modules/gateways/callback/plugnpayss2.php` into the matching paths under the WHMCS root.
+3. Configuration → System Settings → Payment Gateways → activate **PlugnPay Smart Screens v2**.
+4. Enter the Gateway Account (PlugnPay username).
+
+- Quick install: [WHMCS_v8.x/INSTALL_SS2.txt](./WHMCS_v8.x/INSTALL_SS2.txt)
 
 ## Usage
 
-Here is a break down of what each payment module offers/does:
+### Smart Screens v2
 
-Smart Screens v2
-* This is a version of our Smart Screens payment method, for PnP accounts.
-* Supports Credit Card &/or ACH/eCheck payment options configured with us.
-* WHMCS will NOT collect any sensitive payment info from the customer at checkout.
-* Customer will be redirected to our gateway's secure billing pages to complete their payment.
-* Our payment gateway will directly collect the payment data via our secure billing pages.
-* After the payment info is submitted & approved, we'll redirect the customer back to WHMCS.
-* This module does NOT require the given site to be SSL secured, but its still HIGHLY recommended.
+* Hosted checkout at `https://pay1.plugnpay.com/pay/`.
+* Supports Credit Card and other payment options configured on your PlugnPay account.
+* WHMCS does **not** collect sensitive payment data at checkout.
+* Customer is redirected to PlugnPay, then returned to WHMCS after approval or decline.
+* HTTPS on your store is strongly recommended (return URL / callback).
+* Refund and subscription cancel are not implemented in the module; use PlugnPay Merchant Admin.
+* Untested beta — validate on a non-production WHMCS 8.x system before production.
 
-Smart Screens v1 (Legacy)
-* This is a legacy version of our Smart Screens payment method, for older/custom PnP accounts.
-* Supports Credit Card &/or ACH/eCheck payment options configured with us.
-* WHMCS will NOT collect any sensitive payment info from the customer at checkout.
-* Customer will be redirected to our gateway's secure billing pages to complete their payment.
-* Our payment gateway will directly collect the payment data via our secure billing pages.
-* After the payment info is submitted & approved, we'll redirect the customer back to WHMCS.
-* This module does NOT require the given site to be SSL secured, but its still HIGHLY recommended.
+## Repository layout
 
-## History
+```
+shopping-cart-WHMCS/
+  README.md
+  .gitignore
+  WHMCS_v8.x/                 # current (8.x) — Smart Screens v2
+    README.md
+    INSTALL_SS2.txt
+    whmcs_ss2_module.zip
+    src/ss2/
+```
 
-Smart Screens v2
-* Gateway Hosted Solution
-* Generic version for all PlugnPay clients with basic payment needs
+## Support
 
-Smart Screens v1
-* Legacy Gateway Hosted Solution
-* Generic version for all PlugnPay clients with Legacy payment needs
-
+Provided AS IS. See [PlugnPay docs](https://docs.plugnpay.com/) and the module README for integration details.
