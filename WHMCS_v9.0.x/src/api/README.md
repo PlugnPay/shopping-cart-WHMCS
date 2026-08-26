@@ -1,6 +1,6 @@
 # PlugnPay Remote API Module for WHMCS 9.0.x
 
-**Version:** 1.0.0  
+**Version:** 1.0.1  
 **Target:** WHMCS **9.0.7** (compatible with 9.0.x)  
 **Status:** Protocol tests included; validate on a non-production WHMCS 9.0.7 system before production
 
@@ -101,9 +101,8 @@ There is **no** Test/Production toggle and **no** public demo publisher.
 | `ipaddress` | Client IP |
 | `client` | `WHMCS_API` |
 | `dontsndmail` | `yes` (WHMCS sends its own confirmation) |
-| `itemN` / `costN` / `quantityN` / `descriptionN` | Invoice line items when available |
 
-WHMCS supplies expiry as `MMYY`; the module sends `card-exp` as `MM/YY`.
+WHMCS supplies expiry as `MMYY`; the module sends `card-exp` as `MM/YY`. Line items are not sent; WHMCS invoice rows plus tax/credit often do not match `card-amount`.
 
 ## Logging
 
@@ -126,6 +125,7 @@ Never logged: full card number, CVV, or publisher-password.
 | Declined | Gateway Log `MErrMsg` / `FinalStatus`; card, AVS, or account settings |
 | cURL / empty response | PHP cURL + OpenSSL; firewall to `pay1.plugnpay.com` |
 | Need to capture / void / refund | Use PlugnPay Merchant Admin (not this WHMCS module) |
+| 3-D Secure / extra authentication | This module does not implement 3-D Secure; those cards may decline |
 
 ## Manual test checklist
 

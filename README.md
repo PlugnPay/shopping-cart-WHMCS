@@ -70,7 +70,7 @@ You may install both 9.0.x modules; enable only the payment method(s) you need.
 * Authorization Type: `authonly` or `authpostauth`.
 * Capture / void / refund are done in PlugnPay Merchant Admin (not from WHMCS).
 * On successful capture the invoice is marked paid in WHMCS so services can provision.
-* For WHMCS 9.0.x: payment module **v1.0.0**; target **9.0.7**.
+* For WHMCS 9.0.x: payment module **v1.0.1**; target **9.0.7**.
 * No public demo / test publisher — use merchant-supplied credentials.
 
 ### Smart Screens v2 (WHMCS 9.0.x)

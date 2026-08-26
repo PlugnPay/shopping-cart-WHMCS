@@ -15,7 +15,7 @@ class PnPApi
 {
     public const ENDPOINT = 'https://pay1.plugnpay.com/payment/pnpremote.cgi';
     public const CLIENT_IDENTIFIER = 'WHMCS_API';
-    public const VERSION = '1.0.0';
+    public const VERSION = '1.0.1';
 
     private string $publisherName;
     private string $publisherPassword;

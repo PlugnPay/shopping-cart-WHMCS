@@ -75,7 +75,7 @@ assert_true($fields['cost1'] === '6.17', 'line item cost');
 assert_true($fields['quantity1'] === '2', 'line item qty');
 assert_true(PnPApi::ENDPOINT === 'https://pay1.plugnpay.com/payment/pnpremote.cgi', 'endpoint');
 assert_true(PnPApi::CLIENT_IDENTIFIER === 'WHMCS_API', 'client identifier');
-assert_true(PnPApi::VERSION === '1.0.0', 'protocol version');
+assert_true(PnPApi::VERSION === '1.0.1', 'protocol version');
 
 $sale = PnPApi::buildAuthorizeFields([
     'authtype' => 'authpostauth',
@@ -142,6 +142,9 @@ assert_true(str_contains($gatewaySrc, "'DisableLocalCreditCardInput' => false"),
 assert_true(str_contains($gatewaySrc, 'PnPApi::buildAuthorizeFields'), 'gateway uses protocol helper');
 assert_true(str_contains($gatewaySrc, 'https://'), 'gateway requires HTTPS systemurl');
 assert_true(str_contains($gatewaySrc, 'sanitize'), 'gateway sanitizes rawdata');
+assert_true(str_contains($gatewaySrc, 'WHMCS-'), 'gateway falls back when orderID is missing');
+assert_true(str_contains($gatewaySrc, 'number_format'), 'gateway formats amount to two decimals');
+assert_true(!str_contains($gatewaySrc, 'tblinvoiceitems'), 'gateway does not send invoice line items');
 
 if ($failed > 0) {
     echo "\n{$failed} check(s) failed\n";

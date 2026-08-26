@@ -88,7 +88,7 @@ function plugnpayapi_capture($params)
         : 'authonly';
     $systemUrl = (string)($params['systemurl'] ?? '');
     $invoiceId = (string)($params['invoiceid'] ?? '');
-    $amount = (string)($params['amount'] ?? '');
+    $amount = number_format((float)($params['amount'] ?? 0), 2, '.', '');
     $client = is_array($params['clientdetails'] ?? null) ? $params['clientdetails'] : [];
 
     $logger = new PnPLogger(
@@ -122,7 +122,6 @@ function plugnpayapi_capture($params)
     }
 
     $billingName = trim((string)($client['firstname'] ?? '') . ' ' . (string)($client['lastname'] ?? ''));
-    $items = plugnpayapi_invoiceItems($invoiceId);
 
     $fields = PnPApi::buildAuthorizeFields([
         'authtype' => $authType,
@@ -150,7 +149,6 @@ function plugnpayapi_capture($params)
         'ship_zip' => (string)($client['postcode'] ?? ''),
         'ship_country' => (string)($client['country'] ?? ''),
         'ip_address' => (string)($_SERVER['REMOTE_ADDR'] ?? ''),
-        'items' => $items,
     ]);
 
     $api = new PnPApi($accountId, $remotePassword, $logger);
@@ -158,9 +156,14 @@ function plugnpayapi_capture($params)
     $safe = $logger->sanitize($response);
 
     if ($api->isApproved($response)) {
+        $transid = PnPApi::transactionId($response);
+        if ($transid === '') {
+            $transid = 'WHMCS-' . $invoiceId;
+        }
+
         return [
             'status' => 'success',
-            'transid' => PnPApi::transactionId($response),
+            'transid' => $transid,
             'rawdata' => $safe,
         ];
     }
@@ -175,28 +178,4 @@ function plugnpayapi_capture($params)
         'declinereason' => $reason,
         'rawdata' => $safe,
     ];
-}
-
-/**
- * @param mixed $invoiceId
- * @return list<array<string, mixed>>
- */
-function plugnpayapi_invoiceItems($invoiceId): array
-{
-    if ($invoiceId === '' || !class_exists('\WHMCS\Database\Capsule')) {
-        return [];
-    }
-
-    $items = [];
-    $rows = \WHMCS\Database\Capsule::table('tblinvoiceitems')->where('invoiceid', $invoiceId)->get();
-    foreach ($rows as $row) {
-        $items[] = [
-            'sku' => (string)($row->id ?? ''),
-            'name' => (string)($row->description ?? ''),
-            'price' => (float)($row->amount ?? 0),
-            'quantity' => 1,
-        ];
-    }
-
-    return $items;
 }

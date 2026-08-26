@@ -1,3 +1,8 @@
+v1.0.1 - 2026-08-26
+- Do not send WHMCS invoice line items (tax/credit totals can disagree with easycart)
+- Format capture amount to two decimal places
+- Fall back to WHMCS-{invoiceid} when the gateway omits orderID
+
 v1.0.0 - 2026-08-26
 - Initial release for WHMCS 9.0.x (target 9.0.7)
 - Remote API onsite card capture via pnpremote.cgi

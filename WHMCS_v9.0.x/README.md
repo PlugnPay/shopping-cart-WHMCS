@@ -7,7 +7,7 @@ Payment modules for WHMCS **9.0.x** (target **9.0.7**, gateway API 1.1). Current
 | | Remote API | Smart Screens v2 |
 |---|---|---|
 | Package | `plugnpayapi` | `plugnpayss2` |
-| Version | 1.0.0 | 1.0.1 |
+| Version | 1.0.1 | 1.0.1 |
 | Status | Target WHMCS 9.0.7; validate before production | Target WHMCS 9.0.7; validate before production |
 | Download | [whmcs_9.0.7_api_module.zip](./whmcs_9.0.7_api_module.zip) | [whmcs_9.0.7_ss2_module.zip](./whmcs_9.0.7_ss2_module.zip) |
 | Checkout | Onsite card fields → `pnpremote.cgi` | Redirect → `https://pay1.plugnpay.com/pay/` |
@@ -25,7 +25,7 @@ You may install both modules; enable only the method(s) you need.
 - Download: [whmcs_9.0.7_api_module.zip](./whmcs_9.0.7_api_module.zip)
 - Quick install: [INSTALL.txt](./INSTALL.txt)
 - Docs: [src/api/README.md](./src/api/README.md)
-- Module version: **1.0.0**
+- Module version: **1.0.1**
 
 WHMCS collects card data on the invoice and posts from the server to PlugnPay Remote API. Capture / void / refund are done in PlugnPay Merchant Admin.
 
